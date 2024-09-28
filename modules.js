@@ -764,11 +764,9 @@ exports.trendingmovies = function (page) {
 
 exports.library = function (page) {
     page.appendItem('', 'separator', {title: ''});
-    page.appendItem('', 'separator', {title: 'On-Demand'});
+    page.appendItem('', 'separator', {title: 'Movies'});
     page.appendItem('', 'separator', {title: ''});
-    page.appendItem(plugin.id + ":library", "video", {
-        icon: Plugin.path + "images/refresh.png"
-    });
+
     var list = JSON.parse(library.list);
     var pos = 0;
 
@@ -822,48 +820,22 @@ exports.library = function (page) {
         };
     }
 
+    // Loop through the list and add movies
     for (var i = list.length - 1; i >= 0; i--) {
         var itemmd = list[i];
         var type = itemmd.type;
 
-        // Fetch cover art and IMDb ID
-        var result = fetchCoverArtAndIMDbID(itemmd.title, type);
-        var coverArt = result.coverArt;
-        var imdbid = result.imdbID || itemmd.imdbid;
+        if (type === 'movie') {
+            // Fetch cover art and IMDb ID
+            var result = fetchCoverArtAndIMDbID(itemmd.title, type);
+            var coverArt = result.coverArt;
+            var imdbid = result.imdbID || itemmd.imdbid;
 
-        var title = decodeURIComponent(itemmd.title);
-        
-        // Handling URL and title formatting for different types
-        if (type === 'episode') {
-            // Retain "Show S01E04" format for episodes
-            var episodeUrl = service.autoPlay
-                ? plugin.id + ":play:" + title + ":" + imdbid + ":episode"
-                : plugin.id + ":details:" + title + ":" + imdbid + ":episode";
-                
-            var item = page.appendItem(episodeUrl, "video", {
-                title: title, // Keep the season/episode format
-                icon: coverArt,
-            });
-            
-            // Remove option for episodes
-            item.addOptAction('Remove \'' + title + '\' from Your Library', (function(title) {
-                return function() {
-                    var list = JSON.parse(library.list);
-                    var decodedTitle = decodeURIComponent(title);
-                    list = list.filter(function(fav) {
-                        return fav.title !== encodeURIComponent(decodedTitle);
-                    });
-                    popup.notify(decodedTitle + ' has been removed from Your Library.', 3);
-                    library.list = JSON.stringify(list);
-                };
-            })(title));
-            
-        } else if (type === 'movie') {
-            // Split the title and year for movies
+            var title = decodeURIComponent(itemmd.title);
             var titleParts = title.split(' ');
             var year = titleParts.pop(); // Extract year
             var movieTitle = titleParts.join(' ');
-            
+
             var movieUrl = service.autoPlay
                 ? plugin.id + ":play:" + movieTitle + ' ' + year + ":" + imdbid + ":movie"
                 : plugin.id + ":details:" + movieTitle + ' ' + year + ":" + imdbid + ":movie";
@@ -872,7 +844,7 @@ exports.library = function (page) {
                 title: title,
                 icon: coverArt,
             });
-            
+
             // Remove option for movies
             item.addOptAction('Remove \'' + title + '\' from Your Library', (function(title) {
                 return function() {
@@ -885,40 +857,80 @@ exports.library = function (page) {
                     library.list = JSON.stringify(list);
                 };
             })(title));
-
-        } else if (type === 'show') {
-            // Retain the show name without season/episode info
-            var showUrl = plugin.id + ":season:" + title;
-
-            var item = page.appendItem(showUrl, "video", {
-                title: title,
-                icon: coverArt,
-            });
-
-            // Remove option for shows
-            item.addOptAction('Remove \'' + title + '\' from Your Library', (function(title) {
-                return function() {
-                    var list = JSON.parse(library.list);
-                    var decodedTitle = decodeURIComponent(title);
-                    list = list.filter(function(fav) {
-                        return fav.title !== encodeURIComponent(decodedTitle);
-                    });
-                    popup.notify(decodedTitle + ' has been removed from Your Library.', 3);
-                    library.list = JSON.stringify(list);
-                };
-            })(title));
         }
-
-        pos++;
     }
 
+    page.appendItem('', 'separator', {title: ''});
+    page.appendItem('', 'separator', {title: 'Shows'});
+    page.appendItem('', 'separator', {title: ''});
 
+    // Loop through the list and add shows
+    for (var i = list.length - 1; i >= 0; i--) {
+        var itemmd = list[i];
+        var type = itemmd.type;
+
+        if (type === 'show' || type === 'episode') {
+            // Fetch cover art and IMDb ID
+            var result = fetchCoverArtAndIMDbID(itemmd.title, type);
+            var coverArt = result.coverArt;
+            var imdbid = result.imdbID || itemmd.imdbid;
+
+            var title = decodeURIComponent(itemmd.title);
+
+            if (type === 'episode') {
+                // Retain "Show S01E04" format for episodes
+                var episodeUrl = service.autoPlay
+                    ? plugin.id + ":play:" + title + ":" + imdbid + ":episode"
+                    : plugin.id + ":details:" + title + ":" + imdbid + ":episode";
+
+                var item = page.appendItem(episodeUrl, "video", {
+                    title: title, // Keep the season/episode format
+                    icon: coverArt,
+                });
+
+                // Remove option for episodes
+                item.addOptAction('Remove \'' + title + '\' from Your Library', (function(title) {
+                    return function() {
+                        var list = JSON.parse(library.list);
+                        var decodedTitle = decodeURIComponent(title);
+                        list = list.filter(function(fav) {
+                            return fav.title !== encodeURIComponent(decodedTitle);
+                        });
+                        popup.notify(decodedTitle + ' has been removed from Your Library.', 3);
+                        library.list = JSON.stringify(list);
+                    };
+                })(title));
+
+            } else if (type === 'show') {
+                // Retain the show name without season/episode info
+                var showUrl = plugin.id + ":season:" + title;
+
+                var item = page.appendItem(showUrl, "video", {
+                    title: title,
+                    icon: coverArt,
+                });
+
+                // Remove option for shows
+                item.addOptAction('Remove \'' + title + '\' from Your Library', (function(title) {
+                    return function() {
+                        var list = JSON.parse(library.list);
+                        var decodedTitle = decodeURIComponent(title);
+                        list = list.filter(function(fav) {
+                            return fav.title !== encodeURIComponent(decodedTitle);
+                        });
+                        popup.notify(decodedTitle + ' has been removed from Your Library.', 3);
+                        library.list = JSON.stringify(list);
+                    };
+                })(title));
+            }
+        }
+    }
 
     page.appendItem('', 'separator', {title: ''});
     page.appendItem('', 'separator', {title: 'Channels'});
     page.appendItem('', 'separator', {title: ''});
 
-    var list = eval(otalibrary.list);
+ var list = eval(otalibrary.list);
     var pos = 0;
     for (var i in list) {
       var itemmd = JSON.parse(list[i]);
@@ -930,7 +942,6 @@ exports.library = function (page) {
       addOptionForRemovingChannelFromLibrary(page, item, decodeURIComponent(itemmd.title), pos);
       pos++;
     }
-    
 };
 
 exports.history = function (page) {
