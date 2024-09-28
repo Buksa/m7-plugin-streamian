@@ -267,8 +267,13 @@ function consultAddons(page, title, imdbid) {
 
             if (preferredResults.length > 0) {
                 selectBestResult(preferredResults);
+                // If the best preferred quality torrent has fewer than 15 seeders, fallback to the best available torrent
+                if (maxPreferredSeeders < 15) {
+                    popup.notify("Streamian | Couldn't find a source in preferred quality, playing best source found.", 10);
+                    selectBestResult(combinedResults);  // Fallback to the best available torrent in any quality
+                }
             } else {
-                selectBestResult(combinedResults);
+                selectBestResult(combinedResults);  // No preferred quality found, choose the best available
                 if (selectedResult) {
                     popup.notify("Streamian | Couldn't find a source in preferred quality, playing best source found.", 10);
                 }
