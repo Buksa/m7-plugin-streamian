@@ -252,14 +252,14 @@ function consultAddons(page, title, imdbid) {
             checkCancellation();
 
             var selectedResult;
-            var maxPreferredSeeders = 0;
+            var minPreferredSeeders = 0;
 
             function selectBestResult(results) {
                 results.forEach(function(item) {
                     checkCancellation();
                     var seederCount = parseInt(item.split(" - ")[2]) || 0;
-                    if (seederCount > maxPreferredSeeders) {
-                        maxPreferredSeeders = seederCount;
+                    if (seederCount > minPreferredSeeders) {
+                        minPreferredSeeders = seederCount;
                         selectedResult = item;
                     }
                 });
@@ -268,7 +268,7 @@ function consultAddons(page, title, imdbid) {
             if (preferredResults.length > 0) {
                 selectBestResult(preferredResults);
                 // If the best preferred quality torrent has fewer than 15 seeders, fallback to the best available torrent
-                if (maxPreferredSeeders < 15) {
+                if (minPreferredSeeders < 15) {
                     popup.notify("Streamian | Couldn't find a source in preferred quality, playing best source found.", 10);
                     selectBestResult(combinedResults);  // Fallback to the best available torrent in any quality
                 }
@@ -279,6 +279,15 @@ function consultAddons(page, title, imdbid) {
                 }
             }
             checkCancellation();
+
+            // Fallback to any source with undefined quality if none found with defined quality
+            if (!selectedResult) {
+                var undefinedQualityResults = combinedResults.filter(function(item) {
+                    return item.split(" - ")[1] === "undefined";
+                });
+
+                selectBestResult(undefinedQualityResults);
+            }
 
             if (selectedResult) {
                 var parts = selectedResult.split(" - ");

@@ -772,28 +772,78 @@ exports.library = function (page) {
 
     function fetchCoverArtAndIMDbID(title, type) {
         var apiUrl;
+    
         if (type === 'movie') {
-            var movieTitleParts = title.split('%20');
-            var movieTitle = movieTitleParts.slice(0, movieTitleParts.length - 1).join('%20');
-            apiUrl = "https://api.themoviedb.org/3/search/movie?api_key=a0d71cffe2d6693d462af9e4f336bc06&query=" + movieTitle;
+            var imdbID = ''; // Placeholder for IMDb ID
+            // Attempt to fetch IMDb ID if available
+            if (itemmd.imdbid) {
+                imdbID = itemmd.imdbid;
+            } else {
+                // Extract the year if necessary for fallback search
+                var movieTitleParts = title.split(' ');
+                var year = movieTitleParts.pop(); // Extract the year
+                var movieTitle = movieTitleParts.join(' '); // Reconstruct title without year
+    
+                // Search for movie using title
+                apiUrl = "https://api.themoviedb.org/3/search/movie?api_key=a0d71cffe2d6693d462af9e4f336bc06&query=" + encodeURIComponent(movieTitle);
+            }
+    
+            try {
+                // If we have an IMDb ID, use it to get the cover art
+                if (imdbID) {
+                    var idUrl = "https://api.themoviedb.org/3/find/" + imdbID + "?api_key=a0d71cffe2d6693d462af9e4f336bc06&external_source=imdb_id";
+                    var idResponse = showtime.httpGet(idUrl).toString();
+                    var idJson = JSON.parse(idResponse);
+                    if (idJson.movie_results && idJson.movie_results.length > 0) {
+                        var item = idJson.movie_results[0];
+                        return {
+                            coverArt: item.poster_path ? "https://image.tmdb.org/t/p/w500" + item.poster_path : Plugin.path + "images/cvrntfnd.png",
+                            imdbID: imdbID // Return the IMDb ID
+                        };
+                    }
+                }
+    
+                // If IMDb ID wasn't used or no results were found, fall back to title search
+                if (!apiUrl) {
+                    apiUrl = "https://api.themoviedb.org/3/search/movie?api_key=a0d71cffe2d6693d462af9e4f336bc06&query=" + encodeURIComponent(title);
+                }
+    
+                var response = showtime.httpGet(apiUrl).toString();
+                var jsonResponse = JSON.parse(response);
+    
+                if (jsonResponse.results && jsonResponse.results.length > 0) {
+                    var item = jsonResponse.results[0];
+                    var imdbID = '';
+    
+                    // Fetch external_ids to retrieve IMDb ID for the movie
+                    var idUrl = "https://api.themoviedb.org/3/movie/" + item.id + "/external_ids?api_key=a0d71cffe2d6693d462af9e4f336bc06";
+                    var idResponse = showtime.httpGet(idUrl).toString();
+                    var idJson = JSON.parse(idResponse);
+                    imdbID = idJson.imdb_id ? idJson.imdb_id : ''; // Get IMDb ID
+    
+                    return {
+                        coverArt: item.poster_path ? "https://image.tmdb.org/t/p/w500" + item.poster_path : Plugin.path + "images/cvrntfnd.png",
+                        imdbID: imdbID // Returning IMDb ID as well
+                    };
+                }
+            } catch (error) {
+                console.log("[DEBUG]: Error fetching cover art and IMDb ID: " + error);
+            }
         } else if (type === 'show') {
-            apiUrl = "https://api.themoviedb.org/3/search/tv?api_key=a0d71cffe2d6693d462af9e4f336bc06&query=" + title;
+            apiUrl = "https://api.themoviedb.org/3/search/tv?api_key=a0d71cffe2d6693d462af9e4f336bc06&query=" + encodeURIComponent(title);
         } else if (type === 'episode') {
-            var showTitle = title.split("%20S")[0]; // Extract the show title before the season number
-            apiUrl = "https://api.themoviedb.org/3/search/tv?api_key=a0d71cffe2d6693d462af9e4f336bc06&query=" + showTitle;
+            var showTitle = title.split(" S")[0]; // Extract the show title before the season number
+            apiUrl = "https://api.themoviedb.org/3/search/tv?api_key=a0d71cffe2d6693d462af9e4f336bc06&query=" + encodeURIComponent(showTitle);
         }
-
+    
         try {
             var response = showtime.httpGet(apiUrl).toString();
-            console.log("[DEBUG]: API URL: " + apiUrl);
-            console.log("[DEBUG]: API Response: " + response);
             var jsonResponse = JSON.parse(response);
-
+    
             if (jsonResponse.results && jsonResponse.results.length > 0) {
                 var item = jsonResponse.results[0];
                 var imdbID = '';
-
-                // Fetch external_ids to retrieve IMDb ID for TV shows and episodes
+    
                 if (type === 'episode' || type === 'show') {
                     var idUrl = "https://api.themoviedb.org/3/tv/" + item.id + "/external_ids?api_key=a0d71cffe2d6693d462af9e4f336bc06";
                     var idResponse = showtime.httpGet(idUrl).toString();
@@ -805,7 +855,7 @@ exports.library = function (page) {
                     var idJson = JSON.parse(idResponse);
                     imdbID = idJson.imdb_id ? idJson.imdb_id : ''; // Get IMDb ID
                 }
-
+    
                 return {
                     coverArt: item.poster_path ? "https://image.tmdb.org/t/p/w500" + item.poster_path : Plugin.path + "images/cvrntfnd.png",
                     imdbID: imdbID // Returning IMDb ID as well
@@ -814,11 +864,12 @@ exports.library = function (page) {
         } catch (error) {
             console.log("[DEBUG]: Error fetching cover art and IMDb ID: " + error);
         }
+        
         return {
             coverArt: Plugin.path + "images/cvrntfnd.png",
             imdbID: ''
         };
-    }
+    }    
 
     // Loop through the list and add movies
     for (var i = list.length - 1; i >= 0; i--) {
