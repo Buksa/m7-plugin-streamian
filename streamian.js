@@ -1010,11 +1010,12 @@ new page.Route(plugin.id + ":details:(.*):(.*):(.*)", function(page, title, imdb
             var movieDetailsResponse = http.request(movieDetailsUrl);
             var movieDetails = showtime.JSONDecode(movieDetailsResponse.toString());
 
-            page.appendItem('', 'video', {title: "Vote Average: " + (movie.vote_average || "N/A"),
+            page.appendItem('', 'video', {title: "Vote Average: " + (movie.vote_average ? parseInt(movie.vote_average + 0.5) : "N/A"),
                 icon: Plugin.path + 'images/vote.png',
                 description: description,
                 backdrops: [{url: backdrop}], // Use the episode still from TMDB
-            });
+            });            
+            
             page.appendItem('', 'video', {title: "Runtime: " + (movieDetails.runtime || "N/A") + " minutes",
                 icon: Plugin.path + 'images/time.png',
                 description: description,
@@ -1037,7 +1038,7 @@ new page.Route(plugin.id + ":details:(.*):(.*):(.*)", function(page, title, imdb
                 castList = "N/A";
             }
             page.appendItem('', 'video', {
-                icon: Plugin.path + 'images/stars.png',
+                icon: Plugin.path + 'images/cast.png',
                 backdrops: [{url: backdrop}], // Use the episode still from TMDB
                 description: description,
                 title: "Cast: " + castList,
@@ -1057,7 +1058,7 @@ new page.Route(plugin.id + ":details:(.*):(.*):(.*)", function(page, title, imdb
                 title: "Crew: " + crewList,
                 backdrops: [{url: backdrop}], // Use the episode still from TMDB
                 description: description,
-                icon: Plugin.path + 'images/stars.png',
+                icon: Plugin.path + 'images/crew.png',
             });
 
         } else if (data.tv_episode_results && data.tv_episode_results.length > 0) {
@@ -1075,6 +1076,7 @@ new page.Route(plugin.id + ":details:(.*):(.*):(.*)", function(page, title, imdb
                 backdrops: [{url: backdrop}], // Use the episode still from TMDB
             });
 
+            page.appendItem('', 'separator', {title: ''});
             page.appendItem('', 'separator', {title: '         Information:                                                                                                                              '});
             page.appendItem('', 'separator', {title: ''});
 
@@ -1084,11 +1086,13 @@ new page.Route(plugin.id + ":details:(.*):(.*):(.*)", function(page, title, imdb
                 description: description,
                 backdrops: [{url: backdrop}], // Use the episode still from TMDB
             });
-            page.appendItem('', 'video', {title: "Vote Average: " + (episode.vote_average || "N/A"),
+            
+            page.appendItem('', 'video', {title: "Vote Average: " + (episode.vote_average ? parseInt(episode.vote_average + 0.5) : "N/A"),
                 icon: Plugin.path + 'images/vote.png',
                 description: description,
                 backdrops: [{url: backdrop}], // Use the episode still from TMDB
-            });
+            });            
+            
             page.appendItem('', 'video', {
                 icon: Plugin.path + 'images/stars.png',
                 title: "Guest Stars: " + (episode.guest_stars && episode.guest_stars.length > 0 ? episode.guest_stars[0].name : "N/A"),
