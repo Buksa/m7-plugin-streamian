@@ -764,7 +764,7 @@ exports.trendingmovies = function (page) {
 
 exports.library = function (page) {
     page.appendItem('', 'separator', {title: ''});
-    page.appendItem('', 'separator', {title: 'Movies'});
+    page.appendItem('', 'separator', {title: '        Movies                                                                                                                                                                                                                                                               '});
     page.appendItem('', 'separator', {title: ''});
 
     var list = JSON.parse(library.list);
@@ -861,7 +861,7 @@ exports.library = function (page) {
     }
 
     page.appendItem('', 'separator', {title: ''});
-    page.appendItem('', 'separator', {title: 'Shows'});
+    page.appendItem('', 'separator', {title: '        Shows                                                                                                                                                                                                                                                               '});
     page.appendItem('', 'separator', {title: ''});
 
     // Loop through the list and add shows
@@ -927,7 +927,7 @@ exports.library = function (page) {
     }
 
     page.appendItem('', 'separator', {title: ''});
-    page.appendItem('', 'separator', {title: 'Channels'});
+    page.appendItem('', 'separator', {title: '        Channels                                                                                                                                                                                                                                                               '});
     page.appendItem('', 'separator', {title: ''});
 
  var list = eval(otalibrary.list);
