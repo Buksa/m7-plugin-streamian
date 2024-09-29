@@ -2,7 +2,12 @@
 // Author: F0R3V3R50F7
 exports.search = function (page, title) {
     page.loading = true;
-    // YTS API URL
+    var relevantTitlePartMatch = title.match(/\s(S\d{2}E\d{2})/i);
+    if (relevantTitlePartMatch) {
+        console.log('Yify Movies | Show detected, skipping...');
+        return [];
+    }
+    
     var apiUrl = "https://yts.mx/api/v2/list_movies.json?query_term=" + encodeURIComponent(title);
     var response = http.request(apiUrl);
     var json = JSON.parse(response);

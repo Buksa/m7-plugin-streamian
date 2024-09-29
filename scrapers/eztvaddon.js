@@ -2,8 +2,19 @@
 // Author: F0R3V3R50F7
 exports.search = function (page, title) {
     page.loading = true;
-    var relevantTitlePartMatch = title.match(/^(.*?)(?:\sS\d{2}E\d{2}|\s\d{4})/i);
-    var relevantTitlePart = relevantTitlePartMatch[1].trim().toLowerCase().replace(/\./g, ' ').replace(/[\-:]/g, '');
+
+    var relevantTitlePartMatch = title.match(/\s(S\d{2}E\d{2})/i);
+
+    if (relevantTitlePartMatch) {
+        var relevantTitlePart = relevantTitlePartMatch[1]
+            .trim()
+            .toLowerCase();
+
+        console.log('EZTV | Relevant title part: ' + relevantTitlePart);
+    } else {
+        console.log('EZTV | Movie detected, skipping...');
+        return [];
+    }
 
     var searchUrl = "https://eztvx.to/search/" + encodeURIComponent(title);
     var results = [];
