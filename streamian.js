@@ -980,16 +980,8 @@ new page.Route(plugin.id + ":details:(.*):(.*):(.*)", function(page, title, imdb
     page.appendItem('', 'separator', {title: '        Actions:                                                                                                                              '});
     page.appendItem('', 'separator', {title: ''});
 
-    // Always append a play button, even if no IMDb info is found
-    page.appendItem(plugin.id + ":play:" + title + ":" + imdbid + ":" + type, "video", {
-        title: "Play",
-        icon: Plugin.path + "images/play.png",
-        description: description,
-        backdrops: [{url: backdrop}], // Default backdrop
-    });
-
-    // Fetch details if IMDb ID is available and type is valid
-    if (imdbid && (type === 'movie' || type === 'episode')) {
+    // Fetch details for both movies and episodes using IMDb ID
+    if (type === 'movie' || type === 'episode') {
         var apiUrl = "https://api.themoviedb.org/3/find/" + imdbid + "?api_key=" + apiKey + "&external_source=imdb_id";
         var response = http.request(apiUrl, {method: 'GET'});
         var data = showtime.JSONDecode(response.toString());
@@ -997,70 +989,128 @@ new page.Route(plugin.id + ":details:(.*):(.*):(.*)", function(page, title, imdb
         if (data.movie_results && data.movie_results.length > 0) {
             var movie = data.movie_results[0];
 
+            // Fetch basic movie information
             description = movie.overview || "No description available";
             posterUrl = movie.poster_path ? basePosterUrl + movie.poster_path : posterUrl;
-            backdrop = movie.backdrop_path ? baseThumbnailUrl + movie.backdrop_path : backdrop;
+            backdrop = movie.backdrop_path ? baseThumbnailUrl + movie.backdrop_path : backdrop; // Use movie backdrop
 
-            // Update the play button with movie details
+            // Add the play item with the movie backdrop
             page.appendItem(plugin.id + ":play:" + title + ":" + imdbid + ":" + type, "video", {
                 title: "Play",
                 icon: Plugin.path + "images/play.png",
                 description: description,
-                backdrops: [{url: backdrop}], // Movie backdrop
+                backdrops: [{url: backdrop}], // Use the movie backdrop from TMDB
             });
 
-            // Information separator
             page.appendItem('', 'separator', {title: '         Information:                                                                                                                              '});
             page.appendItem('', 'separator', {title: ''});
 
-            // Movie runtime and other details
+            // Fetch runtime from a separate movie details endpoint
             var movieDetailsUrl = "https://api.themoviedb.org/3/movie/" + movie.id + "?api_key=" + apiKey;
             var movieDetailsResponse = http.request(movieDetailsUrl);
             var movieDetails = showtime.JSONDecode(movieDetailsResponse.toString());
 
-            page.appendItem('', 'video', {
-                title: "Runtime: " + (movieDetails.runtime || "N/A") + " minutes",
+            page.appendItem('', 'video', {title: "Vote Average: " + (movie.vote_average || "N/A"),
+                icon: Plugin.path + 'images/vote.png',
+                description: description,
+                backdrops: [{url: backdrop}], // Use the episode still from TMDB
+            });
+            page.appendItem('', 'video', {title: "Runtime: " + (movieDetails.runtime || "N/A") + " minutes",
                 icon: Plugin.path + 'images/time.png',
                 description: description,
-                backdrops: [{url: backdrop}],
+                backdrops: [{url: backdrop}], // Use the episode still from TMDB
+            });
+
+            // Fetch cast and crew from a separate API call
+            var creditsUrl = "https://api.themoviedb.org/3/movie/" + movie.id + "/credits?api_key=" + apiKey;
+            var creditsResponse = http.request(creditsUrl);
+            var creditsData = showtime.JSONDecode(creditsResponse.toString());
+
+            // Process cast names
+            var castList = "";
+            if (creditsData.cast && creditsData.cast.length > 0) {
+                for (var i = 0; i < creditsData.cast.length; i++) {
+                    castList += creditsData.cast[i].name;
+                    if (i < creditsData.cast.length - 1) castList += ", ";
+                }
+            } else {
+                castList = "N/A";
+            }
+            page.appendItem('', 'video', {
+                icon: Plugin.path + 'images/stars.png',
+                backdrops: [{url: backdrop}], // Use the episode still from TMDB
+                description: description,
+                title: "Cast: " + castList,
+            });
+
+            // Process crew names
+            var crewList = "";
+            if (creditsData.crew && creditsData.crew.length > 0) {
+                for (var j = 0; j < creditsData.crew.length; j++) {
+                    crewList += creditsData.crew[j].name;
+                    if (j < creditsData.crew.length - 1) crewList += ", ";
+                }
+            } else {
+                crewList = "N/A";
+            }
+            page.appendItem('', 'video', {
+                title: "Crew: " + crewList,
+                backdrops: [{url: backdrop}], // Use the episode still from TMDB
+                description: description,
+                icon: Plugin.path + 'images/stars.png',
             });
 
         } else if (data.tv_episode_results && data.tv_episode_results.length > 0) {
+            // Handle episode results
             var episode = data.tv_episode_results[0];
-
             description = episode.overview || "No description available";
             posterUrl = episode.still_path ? baseThumbnailUrl + episode.still_path : posterUrl;
-            backdrop = episode.still_path ? baseThumbnailUrl + episode.still_path : backdrop;
+            backdrop = episode.still_path ? baseThumbnailUrl + episode.still_path : backdrop; // Use episode still
 
-            // Update the play button with episode details
+            // Add the play item with the episode still
             page.appendItem(plugin.id + ":play:" + title + ":" + imdbid + ":" + type, "video", {
                 title: "Play",
                 icon: Plugin.path + "images/play.png",
                 description: description,
-                backdrops: [{url: backdrop}], // Episode backdrop
+                backdrops: [{url: backdrop}], // Use the episode still from TMDB
             });
 
-            // Information separator
             page.appendItem('', 'separator', {title: '         Information:                                                                                                                              '});
             page.appendItem('', 'separator', {title: ''});
 
-            // Episode details
-            page.appendItem('', 'video', {
-                title: "Air Date: " + (episode.air_date || "N/A"),
+            // Append episode information
+            page.appendItem('', 'video', {title: "Air Date: " + (episode.air_date || "N/A"),
                 icon: Plugin.path + 'images/airdate.png',
                 description: description,
-                backdrops: [{url: backdrop}],
+                backdrops: [{url: backdrop}], // Use the episode still from TMDB
+            });
+            page.appendItem('', 'video', {title: "Vote Average: " + (episode.vote_average || "N/A"),
+                icon: Plugin.path + 'images/vote.png',
+                description: description,
+                backdrops: [{url: backdrop}], // Use the episode still from TMDB
+            });
+            page.appendItem('', 'video', {
+                icon: Plugin.path + 'images/stars.png',
+                title: "Guest Stars: " + (episode.guest_stars && episode.guest_stars.length > 0 ? episode.guest_stars[0].name : "N/A"),
+                description: description,
+                backdrops: [{url: backdrop}], // Use the episode still from TMDB
             });
 
         } else {
-            popup.notify("No information found for this title.", 5);
+            // No information found; still add the play button
+            page.appendItem(plugin.id + ":play:" + title + ":" + imdbid + ":" + type, "video", {
+                title: "Play",
+                icon: Plugin.path + "images/play.png",
+                description: "No information available for this title.",
+                backdrops: [{url: backdrop}], // Fallback backdrop
+            });
+
+            // Notify user that no information is available
+            popup.notify("No information available for this title. You can still play the video.", 5);
         }
-    } else {
-        // If no IMDb ID or no info is found, just notify and continue with default play button
-        popup.notify("No IMDb ID provided or no information found. Using default.", 5);
     }
 
-    popup.notify("Welcome To The Information Page! If you wish to skip this page in future, you can turn on Auto-Play in Settings.", 10);
+    popup.notify("Welcome To The Information Page! If you wish to skip this page in future, you can turn on Auto-Play in Settings. ", 10);
 
     page.loading = false;
 });
