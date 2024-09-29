@@ -337,8 +337,41 @@ function setPageHeader(page, title) {
     if (page.metadata) {
         page.metadata.title = title;
         page.metadata.icon = logo;
-        page.metadata.background = Plugin.path + "images/bg.png";
+        var currentBg = Plugin.path + "images/bg.png";
+
+        var apiUrl = 'http://ip-api.com/json';  // API to detect user's location
+
+        // Fetch location data from ip-api
+        var response = http.request(apiUrl, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        var locationData = JSON.parse(response);
+
+        // Get the current date using ISO format (YYYY-MM-DDTHH:mm:ss.sssZ)
+        var currentDateString = new Date().toISOString();
+        var month = currentDateString.substring(5, 7); // Extract the month (MM) from the ISO string
+        var day = currentDateString.substring(8, 10);  // Extract the day (DD) from the ISO string
+
+        // Check region and set Halloween or Christmas backgrounds
+        if (locationData.countryCode === 'US' || locationData.countryCode === 'CA' || locationData.countryCode === 'GB') {
+            if (month === '10') {  // October
+                currentBg = Plugin.path + "images/bghalloween.png";
+            } else if (month === '12') {  // December
+                currentBg = Plugin.path + "images/bgxmas.png";
+            }
+        }
+
+        // Set the background for the page
+        page.metadata.background = currentBg;
+
+        // Debugging
+        console.log("[DEBUG] Current background: " + currentBg);
     }
+
     page.type = "directory";
     page.contents = "items";
     page.entries = 0;
@@ -1002,6 +1035,7 @@ new page.Route(plugin.id + ":details:(.*):(.*):(.*)", function(page, title, imdb
                 backdrops: [{url: backdrop}], // Use the movie backdrop from TMDB
             });
 
+            page.appendItem('', 'separator', {title: ''});
             page.appendItem('', 'separator', {title: '         Information:                                                                                                                              '});
             page.appendItem('', 'separator', {title: ''});
 
