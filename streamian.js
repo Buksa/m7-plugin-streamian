@@ -51,6 +51,18 @@ settings.createMultiOpt('selectQuality', 'Preferred Quality', [
   ], function(v) {
   service.selectQuality = v;
 });
+settings.createMultiOpt('selectSeeders', 'Preferred Minimum Seeder Count', [
+    ['100', '100'],
+    ['65', '65'],
+    ['40', '40'],
+    ['30', '30', true],
+    ['20', '20'],
+    ['10', '10'],
+    ['5', '5'],
+    ['1', '1'],
+  ], function(v) {
+    service.minPreferredSeeders = v;
+});
 settings.createDivider('                Data Management                                                                                                                                                                                                                                                                                                                                                                                                                              ');
 settings.createDivider('');
 
@@ -228,36 +240,26 @@ function consultAddons(page, title, imdbid) {
         function processResults() {
             checkCancellation();
 
+            // Get the preferred quality and minPreferredSeeders from the service settings
             var preferredQualityRegex;
-            var nextLowerQualityRegex;
-            var nextHigherQualityRegex;
+            var minPreferredSeeders = service.minPreferredSeeders || 23;  // Replace 15 with the default or a fallback value
 
-            // Define quality regex patterns based on the user's selected preference
             switch (service.selectQuality) {
                 case "UltraHD":
                     preferredQualityRegex = /2160p/i;
-                    nextLowerQualityRegex = /1080p/i;
-                    nextHigherQualityRegex = null;  // UltraHD is the highest
                     break;
                 case "FullHD":
                     preferredQualityRegex = /1080p/i;
-                    nextLowerQualityRegex = /720p/i;
-                    nextHigherQualityRegex = /2160p/i;
                     break;
                 case "HD":
                     preferredQualityRegex = /720p/i;
-                    nextLowerQualityRegex = /480p/i;
-                    nextHigherQualityRegex = /1080p/i;
                     break;
                 case "SD":
                     preferredQualityRegex = /480p/i;
-                    nextLowerQualityRegex = null;  // 480p is the lowest
-                    nextHigherQualityRegex = /720p/i;
                     break;
             }
             checkCancellation();
 
-            // Filter results by preferred quality first
             var preferredResults = combinedResults.filter(function(item) {
                 checkCancellation();
                 return preferredQualityRegex.test(item.split(" - ")[1]);
@@ -265,53 +267,44 @@ function consultAddons(page, title, imdbid) {
             checkCancellation();
 
             var selectedResult;
-            var minPreferredSeeders = 0;
+            var bestSeeders = 0;
 
             function selectBestResult(results) {
                 results.forEach(function(item) {
                     checkCancellation();
                     var seederCount = parseInt(item.split(" - ")[2]) || 0;
-                    if (seederCount > minPreferredSeeders) {
-                        minPreferredSeeders = seederCount;
+                    if (seederCount > bestSeeders) {
+                        bestSeeders = seederCount;
                         selectedResult = item;
                     }
                 });
             }
 
-            // First, try to pick a source in the preferred quality range
             if (preferredResults.length > 0) {
                 selectBestResult(preferredResults);
-                if (minPreferredSeeders < 15) {
-                    popup.notify("Streamian | Preferred quality has too few seeders, selecting next best source.", 10);
-                    selectedResult = null;  // Reset to try next quality level
+                if (bestSeeders < minPreferredSeeders) {
+                    popup.notify("Streamian | Couldn't find a source in preferred quality, playing next lowest quality.", 10);
+                    
+                    // Try to select the next lowest quality source
+                    var availableQualities = ["1080p", "720p", "480p"];
+                    for (var i = availableQualities.indexOf(service.selectQuality) + 1; i < availableQualities.length; i++) {
+                        var nextLowerQualityRegex = new RegExp(availableQualities[i], 'i');
+                        var nextLowerQualityResults = combinedResults.filter(function(item) {
+                            return nextLowerQualityRegex.test(item.split(" - ")[1]) && parseInt(item.split(" - ")[2]) >= minPreferredSeeders;
+                        });
+                        if (nextLowerQualityResults.length > 0) {
+                            selectBestResult(nextLowerQualityResults);
+                            break;
+                        }
+                    }
+                }
+            } else {
+                selectBestResult(combinedResults);  // No preferred quality found, choose the best available
+                if (selectedResult) {
+                    popup.notify("Streamian | Couldn't find a source in preferred quality, playing best source found.", 10);
                 }
             }
-
-            // If no preferred quality source was selected, try the next lower quality
-            if (!selectedResult && nextLowerQualityRegex) {
-                var lowerQualityResults = combinedResults.filter(function(item) {
-                    checkCancellation();
-                    return nextLowerQualityRegex.test(item.split(" - ")[1]);
-                });
-                selectBestResult(lowerQualityResults);
-            }
-
-            // If lower quality also fails, try the next higher quality
-            if (!selectedResult && nextHigherQualityRegex) {
-                var higherQualityResults = combinedResults.filter(function(item) {
-                    checkCancellation();
-                    return nextHigherQualityRegex.test(item.split(" - ")[1]);
-                });
-                selectBestResult(higherQualityResults);
-            }
-
-            // Fallback to "Unknown" quality if no other sources match
-            if (!selectedResult) {
-                var unknownQualityResults = combinedResults.filter(function(item) {
-                    return item.split(" - ")[1] === "Unknown";
-                });
-                selectBestResult(unknownQualityResults);
-            }
+            checkCancellation();
 
             if (selectedResult) {
                 var parts = selectedResult.split(" - ");
@@ -352,16 +345,13 @@ function consultAddons(page, title, imdbid) {
                 page.loading = false;
             }
 
-            // Reset the global variable as the function execution completes
             cleanup();
         }
 
-        // Start processing results immediately
         processResults();
 
     } catch (e) {
-        // Log any errors and reset the global variable
-        showtime.print("Error in consultAddons: " + e.message);
+        console.log("Error in consultAddons: " + e.message);
         cleanup();
     }
 }
