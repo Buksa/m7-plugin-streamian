@@ -240,7 +240,7 @@ function consultAddons(page, title, imdbid) {
                     preferredQualityRegex = /720p/i;
                     break;
                 case "SD":
-                    preferredQualityRegex = /480p|360p/i;
+                    preferredQualityRegex = /480p/i;
                     break;
             }
             checkCancellation();
