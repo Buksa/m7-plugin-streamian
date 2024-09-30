@@ -229,22 +229,35 @@ function consultAddons(page, title, imdbid) {
             checkCancellation();
 
             var preferredQualityRegex;
+            var nextLowerQualityRegex;
+            var nextHigherQualityRegex;
+
+            // Define quality regex patterns based on the user's selected preference
             switch (service.selectQuality) {
                 case "UltraHD":
                     preferredQualityRegex = /2160p/i;
+                    nextLowerQualityRegex = /1080p/i;
+                    nextHigherQualityRegex = null;  // UltraHD is the highest
                     break;
                 case "FullHD":
                     preferredQualityRegex = /1080p/i;
+                    nextLowerQualityRegex = /720p/i;
+                    nextHigherQualityRegex = /2160p/i;
                     break;
                 case "HD":
                     preferredQualityRegex = /720p/i;
+                    nextLowerQualityRegex = /480p/i;
+                    nextHigherQualityRegex = /1080p/i;
                     break;
                 case "SD":
                     preferredQualityRegex = /480p/i;
+                    nextLowerQualityRegex = null;  // 480p is the lowest
+                    nextHigherQualityRegex = /720p/i;
                     break;
             }
             checkCancellation();
 
+            // Filter results by preferred quality first
             var preferredResults = combinedResults.filter(function(item) {
                 checkCancellation();
                 return preferredQualityRegex.test(item.split(" - ")[1]);
@@ -265,28 +278,39 @@ function consultAddons(page, title, imdbid) {
                 });
             }
 
+            // First, try to pick a source in the preferred quality range
             if (preferredResults.length > 0) {
                 selectBestResult(preferredResults);
-                // If the best preferred quality torrent has fewer than 15 seeders, fallback to the best available torrent
                 if (minPreferredSeeders < 15) {
-                    popup.notify("Streamian | Couldn't find a source in preferred quality, playing best source found.", 10);
-                    selectBestResult(combinedResults);  // Fallback to the best available torrent in any quality
-                }
-            } else {
-                selectBestResult(combinedResults);  // No preferred quality found, choose the best available
-                if (selectedResult) {
-                    popup.notify("Streamian | Couldn't find a source in preferred quality, playing best source found.", 10);
+                    popup.notify("Streamian | Preferred quality has too few seeders, selecting next best source.", 10);
+                    selectedResult = null;  // Reset to try next quality level
                 }
             }
-            checkCancellation();
 
-            // Fallback to any source with undefined quality if none found with defined quality
-            if (!selectedResult) {
-                var undefinedQualityResults = combinedResults.filter(function(item) {
-                    return item.split(" - ")[1] === "undefined";
+            // If no preferred quality source was selected, try the next lower quality
+            if (!selectedResult && nextLowerQualityRegex) {
+                var lowerQualityResults = combinedResults.filter(function(item) {
+                    checkCancellation();
+                    return nextLowerQualityRegex.test(item.split(" - ")[1]);
                 });
+                selectBestResult(lowerQualityResults);
+            }
 
-                selectBestResult(undefinedQualityResults);
+            // If lower quality also fails, try the next higher quality
+            if (!selectedResult && nextHigherQualityRegex) {
+                var higherQualityResults = combinedResults.filter(function(item) {
+                    checkCancellation();
+                    return nextHigherQualityRegex.test(item.split(" - ")[1]);
+                });
+                selectBestResult(higherQualityResults);
+            }
+
+            // Fallback to "Unknown" quality if no other sources match
+            if (!selectedResult) {
+                var unknownQualityResults = combinedResults.filter(function(item) {
+                    return item.split(" - ")[1] === "Unknown";
+                });
+                selectBestResult(unknownQualityResults);
             }
 
             if (selectedResult) {
@@ -952,7 +976,7 @@ new page.Route(plugin.id + ":play:(.*):(.*):(.*)", function(page, title, imdbid,
     setPageHeader(page, "Searching for best source, please wait..");
     page.model.contents = 'list';
     title = decodeURIComponent(title);
-    title = title.replace(/[\[\]{}()]/g, ''); // Remove brackets
+    title = title.replace(/[\[\]{}()\-:]/g, ''); // Remove brackets, dashes, and colons
     popup.notify('Streamian | Encountering issues? Please report to Reddit r/movian', 10);
     page.appendItem(plugin.id + ":details:" + title + ":" + imdbid + ":" + type, "video", {
         title: "Cancel",
