@@ -296,7 +296,7 @@ function consultAddons(page, title, imdbid) {
             if (preferredResults.length > 0) {
                 selectBestResult(preferredResults);
                 if (bestSeeders < minPreferredSeeders) {
-                    popup.notify("Streamian | Preferred quality has too few seeders, selecting next best source.", 10);
+                    popup.notify("Streamian | No source found in preferred quality, selecting best source.", 10);
                     selectedResult = null;  // Reset to try next quality level
                 }
             }
