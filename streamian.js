@@ -776,7 +776,7 @@ new page.Route(plugin.id + ":searchresults:(.*)", function(page, query) {
     page.appendItem(plugin.id + ":searchresults:", 'search', { title: 'Search for Shows, Movies & Channels...' });
     page.appendItem('', 'separator', { title: '', });
     page.loading = true;
-    modules.search(page, query);
+    modules.search(page, query.toLowerCase());
     setPageHeader(page, "Search Results for " + query);
     page.loading = false;
 });

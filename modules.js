@@ -6,6 +6,9 @@
 exports.search = function (page, query) {
     page.model.contents = 'grid';
     setPageHeader(page, query);
+    if (query === "richie rich") {
+        query = "Ri¢hie Ri¢h"; // Change the query for TMDB
+    }
     var apiKey = "a0d71cffe2d6693d462af9e4f336bc06";
     var apiUrl = "https://api.themoviedb.org/3/search/multi?api_key=" + apiKey + "&query=" + encodeURIComponent(query);
     var response = http.request(apiUrl);
