@@ -239,13 +239,13 @@ function consultAddons(page, title, imdbid) {
 
         function processResults() {
             checkCancellation();
-
+        
             var preferredQualityRegex;
             var nextLowerQualityRegex;
             var nextHigherQualityRegex;
-
+        
             var minPreferredSeeders = service.minPreferredSeeders || 23;
-
+        
             // Define quality regex patterns based on the user's selected preference
             switch (service.selectQuality) {
                 case "UltraHD":
@@ -270,17 +270,18 @@ function consultAddons(page, title, imdbid) {
                     break;
             }
             checkCancellation();
-
+        
             // Filter results by preferred quality first
             var preferredResults = combinedResults.filter(function(item) {
                 checkCancellation();
                 return preferredQualityRegex.test(item.split(" - ")[1]);
             });
             checkCancellation();
-
-            var selectedResult;
+        
+            var selectedResult = null;
             var bestSeeders = 0;
-
+        
+            // Helper function to select the best result based on seeder count
             function selectBestResult(results) {
                 results.forEach(function(item) {
                     checkCancellation();
@@ -291,42 +292,44 @@ function consultAddons(page, title, imdbid) {
                     }
                 });
             }
-
+        
             // First, try to pick a source in the preferred quality range
             if (preferredResults.length > 0) {
                 selectBestResult(preferredResults);
                 if (bestSeeders < minPreferredSeeders) {
-                    popup.notify("Streamian | No source found in preferred quality, selecting best source.", 10);
-                    selectedResult = null;  // Reset to try next quality level
+                    selectedResult = null;  // Reset to try the next quality level
                 }
             }
-
+        
             // If no preferred quality source was selected, try the next lower quality
             if (!selectedResult && nextLowerQualityRegex) {
                 var lowerQualityResults = combinedResults.filter(function(item) {
                     checkCancellation();
-                    return nextLowerQualityRegex.test(item.split(" - ")[1]);
+                    return nextLowerQualityRegex.test(item.split(" - ")[1]) && 
+                           parseInt(item.split(" - ")[2]) >= minPreferredSeeders;
                 });
                 selectBestResult(lowerQualityResults);
             }
-
-            // If lower quality also fails, try the next higher quality
+        
+            // If no lower quality source found, check the next higher quality
             if (!selectedResult && nextHigherQualityRegex) {
                 var higherQualityResults = combinedResults.filter(function(item) {
                     checkCancellation();
-                    return nextHigherQualityRegex.test(item.split(" - ")[1]);
+                    return nextHigherQualityRegex.test(item.split(" - ")[1]) &&
+                           parseInt(item.split(" - ")[2]) >= minPreferredSeeders;
                 });
                 selectBestResult(higherQualityResults);
             }
-
+        
             // Fallback to "Unknown" quality if no other sources match
             if (!selectedResult) {
                 var unknownQualityResults = combinedResults.filter(function(item) {
-                    return item.split(" - ")[1] === "Unknown";
+                    return item.split(" - ")[1] === "Unknown" &&
+                           parseInt(item.split(" - ")[2]) >= minPreferredSeeders;
                 });
                 selectBestResult(unknownQualityResults);
             }
-
+        
             if (selectedResult) {
                 var parts = selectedResult.split(" - ");
                 var magnetLink = parts[0];
@@ -334,7 +337,7 @@ function consultAddons(page, title, imdbid) {
                 var seederCount = parts[2];
                 var source = parts[3];
                 var vparams;
-
+        
                 if (source === 'Internet Archive') {
                     popup.notify("Streamian | Streaming from " + source + " direct at " + videoQuality, 10);
                     vparams = "videoparams:" + JSON.stringify({
@@ -365,10 +368,10 @@ function consultAddons(page, title, imdbid) {
                 setPageHeader(page, nostreamnotify);
                 page.loading = false;
             }
-
+        
             // Reset the global variable as the function execution completes
             cleanup();
-        }
+        }        
 
         // Start processing results immediately
         processResults();
