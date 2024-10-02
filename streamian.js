@@ -13,11 +13,16 @@ var popup = require('native/popup');
 var store = require('movian/store');
 var plugin = JSON.parse(Plugin.manifest);
 var logo = Plugin.path + plugin.icon;
-var yts = require('scrapers/ytsaddon');
-var eztv = require('scrapers/eztvaddon');
-var tpb = require('scrapers/tpbaddon');
-var internetarchive = require('scrapers/internetarchiveaddon');
-var modules = require('modules');
+var yts = require('scrapers/yifymovies');
+var eztv = require('scrapers/eztv');
+var tpb = require('scrapers/thepiratebay');
+var channels = require('channels');
+var ondemand = require('ondemand');
+var internetarchive = require('scrapers/internetarchive');
+var history = require('history');
+var tmdb = require('tmdb');
+var stream = require('stream');
+var librarypage = require('library');
 var library = store.create('library');
 var channelhistory = store.create('channelhistory');
 var ondemandhistory = store.create('ondemandhistory');
@@ -176,210 +181,6 @@ function removeFromLibrary(title) {
       library.list = JSON.stringify(list);
     } else {
       popup.notify('Video not found in favorites.', 3);
-    }
-}
-
-function consultAddons(page, title, imdbid) {
-    // Cancel any currently running instance
-    cancelCurrentOperation();
-
-    // Create a new cancellation token for this instance
-    currentCancellationToken = createCancellationToken();
-    const cancellationToken = currentCancellationToken;
-
-    page.loading = true;
-    page.model.contents = 'list';
-
-    // Function cleanup to reset the global variable
-    function cleanup() {
-        page.loading = false;
-        currentCancellationToken = null;
-    }
-
-    // Check if the operation has been cancelled
-    function checkCancellation() {
-        if (cancellationToken.cancelled) {
-            cleanup();
-            throw new Error('Operation cancelled');
-        }
-    }
-
-    try {
-        // Combine search results and check for cancellations
-        var ytsResults = yts.search(page, title) || [];
-        checkCancellation();
-        var internetArchiveResults = internetarchive.search(page, title) || [];
-        checkCancellation();
-        var eztvResults = eztv.search(page, title) || [];
-        checkCancellation();
-        var tpbResults = tpb.search(page, title) || [];
-        checkCancellation();
-
-        // Function to filter results by seeder count
-        function filterResults(results, source) {
-            return results.filter(function(result) {
-                checkCancellation();
-                var parts = result.split(" - ");
-                var seederCount = parseInt(parts[2]) || 0;
-                return seederCount > 0;
-            }).map(function(result) {
-                checkCancellation();
-                return result + " - " + source;
-            });
-        }
-
-        ytsResults = filterResults(ytsResults, "Yify Movies");
-        internetArchiveResults = filterResults(internetArchiveResults, "Internet Archive");
-        eztvResults = filterResults(eztvResults, "EZTV");
-        tpbResults = filterResults(tpbResults, "ThePirateBay");
-        checkCancellation();
-
-        var combinedResults = ytsResults.concat(tpbResults, internetArchiveResults, eztvResults);
-        checkCancellation();
-
-        function processResults() {
-            checkCancellation();
-        
-            var preferredQualityRegex;
-            var nextLowerQualityRegex;
-            var nextHigherQualityRegex;
-        
-            var minPreferredSeeders = service.minPreferredSeeders || 23;
-        
-            // Define quality regex patterns based on the user's selected preference
-            switch (service.selectQuality) {
-                case "UltraHD":
-                    preferredQualityRegex = /2160p/i;
-                    nextLowerQualityRegex = /1080p/i;
-                    nextHigherQualityRegex = null;  // UltraHD is the highest
-                    break;
-                case "FullHD":
-                    preferredQualityRegex = /1080p/i;
-                    nextLowerQualityRegex = /720p/i;
-                    nextHigherQualityRegex = /2160p/i;
-                    break;
-                case "HD":
-                    preferredQualityRegex = /720p/i;
-                    nextLowerQualityRegex = /480p/i;
-                    nextHigherQualityRegex = /1080p/i;
-                    break;
-                case "SD":
-                    preferredQualityRegex = /480p/i;
-                    nextLowerQualityRegex = null;  // 480p is the lowest
-                    nextHigherQualityRegex = /720p/i;
-                    break;
-            }
-            checkCancellation();
-        
-            // Filter results by preferred quality first
-            var preferredResults = combinedResults.filter(function(item) {
-                checkCancellation();
-                return preferredQualityRegex.test(item.split(" - ")[1]);
-            });
-            checkCancellation();
-        
-            var selectedResult = null;
-            var bestSeeders = 0;
-        
-            // Helper function to select the best result based on seeder count
-            function selectBestResult(results) {
-                results.forEach(function(item) {
-                    checkCancellation();
-                    var seederCount = parseInt(item.split(" - ")[2]) || 0;
-                    if (seederCount > bestSeeders) {
-                        bestSeeders = seederCount;
-                        selectedResult = item;
-                    }
-                });
-            }
-        
-            // First, try to pick a source in the preferred quality range
-            if (preferredResults.length > 0) {
-                selectBestResult(preferredResults);
-                if (bestSeeders < minPreferredSeeders) {
-                    selectedResult = null;  // Reset to try the next quality level
-                }
-            }
-        
-            // If no preferred quality source was selected, try the next lower quality
-            if (!selectedResult && nextLowerQualityRegex) {
-                var lowerQualityResults = combinedResults.filter(function(item) {
-                    checkCancellation();
-                    return nextLowerQualityRegex.test(item.split(" - ")[1]) && 
-                           parseInt(item.split(" - ")[2]) >= minPreferredSeeders;
-                });
-                selectBestResult(lowerQualityResults);
-            }
-        
-            // If no lower quality source found, check the next higher quality
-            if (!selectedResult && nextHigherQualityRegex) {
-                var higherQualityResults = combinedResults.filter(function(item) {
-                    checkCancellation();
-                    return nextHigherQualityRegex.test(item.split(" - ")[1]) &&
-                           parseInt(item.split(" - ")[2]) >= minPreferredSeeders;
-                });
-                selectBestResult(higherQualityResults);
-            }
-        
-            // Fallback to "Unknown" quality if no other sources match
-            if (!selectedResult) {
-                var unknownQualityResults = combinedResults.filter(function(item) {
-                    return item.split(" - ")[1] === "Unknown" &&
-                           parseInt(item.split(" - ")[2]) >= minPreferredSeeders;
-                });
-                selectBestResult(unknownQualityResults);
-            }
-        
-            if (selectedResult) {
-                var parts = selectedResult.split(" - ");
-                var magnetLink = parts[0];
-                var videoQuality = parts[1];
-                var seederCount = parts[2];
-                var source = parts[3];
-                var vparams;
-        
-                if (source === 'Internet Archive') {
-                    popup.notify("Streamian | Streaming from " + source + " direct at " + videoQuality, 10);
-                    vparams = "videoparams:" + JSON.stringify({
-                        title: title,
-                        canonicalUrl: magnetLink,
-                        no_fs_scan: true,
-                        sources: [{
-                            url: magnetLink
-                        }],
-                        imdbid: imdbid
-                    });
-                } else {
-                    popup.notify("Streamian | Streaming from " + source + " with " + seederCount + " seeders at " + videoQuality, 10);
-                    vparams = "videoparams:" + JSON.stringify({
-                        title: title,
-                        canonicalUrl: "torrent://" + magnetLink,
-                        no_fs_scan: true,
-                        sources: [{
-                            url: "torrent:video:" + magnetLink
-                        }],
-                        imdbid: imdbid
-                    });
-                }
-                page.loading = false;
-                page.redirect(vparams);
-            } else {
-                var nostreamnotify = "No suitable streams found for " + title;
-                setPageHeader(page, nostreamnotify);
-                page.loading = false;
-            }
-        
-            // Reset the global variable as the function execution completes
-            cleanup();
-        }        
-
-        // Start processing results immediately
-        processResults();
-
-    } catch (e) {
-        // Log any errors and reset the global variable
-        showtime.print("Error in consultAddons: " + e.message);
-        cleanup();
     }
 }
 
@@ -612,100 +413,6 @@ function addChannel(page, url, title, icon) {
 /*|---------------------------------------------------------------------------------------- Establish Pages ----------------------------------------------------------------------------------------|*/
 
 
-new page.Route(plugin.id + ":channels", function(page) {
-    page.model.contents = 'grid';
-    setPageHeader(page, "Channels");
-    cancelCurrentOperation();
-    page.appendItem(plugin.id + ":start", 'video', {
-        icon: Plugin.path + "images/ondemand_off.png",
-    });
-    page.appendItem(plugin.id + ":channels", 'video', {
-        icon: Plugin.path + "images/channels_on.png",
-    });
-    page.appendItem(plugin.id + ":search", 'video', {
-        icon: Plugin.path + "images/search_off.png",
-    });
-    page.appendItem(plugin.id + ":library", 'video', {
-        icon: Plugin.path + "images/library_off.png",
-    });
-    page.appendItem(plugin.id + ":watchhistory", 'video', {
-        icon: Plugin.path + "images/history_off.png",
-    });
-    page.loading = true;
-    modules.addChannels(page);
-    setPageHeader(page, "Channels");
-    page.loading = false;
-});
-
-new page.Route(plugin.id + ":library", function(page) {
-    setPageHeader(page, "Your Library");
-    page.model.contents = 'grid';
-    cancelCurrentOperation();
-    page.appendItem(plugin.id + ":start", 'video', {
-        icon: Plugin.path + "images/ondemand_off.png",
-    });
-    page.appendItem(plugin.id + ":channels", 'video', {
-        icon: Plugin.path + "images/channels_off.png",
-    });
-    page.appendItem(plugin.id + ":search", 'video', {
-        icon: Plugin.path + "images/search_off.png",
-    });
-    page.appendItem(plugin.id + ":library", 'video', {
-        icon: Plugin.path + "images/library_on.png",
-    });
-    page.appendItem(plugin.id + ":watchhistory", 'video', {
-        icon: Plugin.path + "images/history_off.png",
-    });
-    modules.library(page);
-    page.loading = false;
-});
-
-new page.Route(plugin.id + ":trendingshows", function(page) {
-    setPageHeader(page, "Popular Shows");
-    page.model.contents = 'grid';
-    cancelCurrentOperation();
-    page.appendItem(plugin.id + ":start", 'video', {
-        icon: Plugin.path + "images/ondemand_on.png",
-    });
-    page.appendItem(plugin.id + ":channels", 'video', {
-        icon: Plugin.path + "images/channels_off.png",
-    });
-    page.appendItem(plugin.id + ":search", 'video', {
-        icon: Plugin.path + "images/search_off.png",
-    });
-    page.appendItem(plugin.id + ":library", 'video', {
-        icon: Plugin.path + "images/library_off.png",
-    });
-    page.appendItem(plugin.id + ":watchhistory", 'video', {
-        icon: Plugin.path + "images/history_off.png",
-    });
-    modules.trendingshows(page);
-    page.loading = false;
-});
-
-new page.Route(plugin.id + ":trendingmovies", function(page) {
-    setPageHeader(page, "Popular Movies");
-    page.model.contents = 'grid';
-    cancelCurrentOperation();
-    page.appendItem(plugin.id + ":start", 'video', {
-        icon: Plugin.path + "images/ondemand_on.png",
-    });
-    page.appendItem(plugin.id + ":channels", 'video', {
-        icon: Plugin.path + "images/channels_off.png",
-    });
-    page.appendItem(plugin.id + ":search", 'video', {
-        icon: Plugin.path + "images/search_off.png",
-    });
-    page.appendItem(plugin.id + ":library", 'video', {
-        icon: Plugin.path + "images/library_off.png",
-    });
-    page.appendItem(plugin.id + ":watchhistory", 'video', {
-        icon: Plugin.path + "images/history_off.png",
-    });
-    modules.trendingmovies(page);
-    page.loading = false;
-});
-
 new page.Route(plugin.id + ":start", function(page) {
     setPageHeader(page, "Welcome");
     page.model.contents = 'grid';
@@ -726,7 +433,53 @@ new page.Route(plugin.id + ":start", function(page) {
         icon: Plugin.path + "images/history_off.png",
     });
     popup.notify('Streamian | No Streams Available? Make sure EZTVx.to, YTS.mx, TPB.party and Archive.org are unblocked.', 10);
-    modules.ondemand(page);
+    ondemand.List(page);
+    page.loading = false;
+});
+
+new page.Route(plugin.id + ":popularshows", function(page) {
+    setPageHeader(page, "Popular Shows");
+    page.model.contents = 'grid';
+    cancelCurrentOperation();
+    page.appendItem(plugin.id + ":start", 'video', {
+        icon: Plugin.path + "images/ondemand_on.png",
+    });
+    page.appendItem(plugin.id + ":channels", 'video', {
+        icon: Plugin.path + "images/channels_off.png",
+    });
+    page.appendItem(plugin.id + ":search", 'video', {
+        icon: Plugin.path + "images/search_off.png",
+    });
+    page.appendItem(plugin.id + ":library", 'video', {
+        icon: Plugin.path + "images/library_off.png",
+    });
+    page.appendItem(plugin.id + ":watchhistory", 'video', {
+        icon: Plugin.path + "images/history_off.png",
+    });
+    tmdb.popularShows(page);
+    page.loading = false;
+});
+
+new page.Route(plugin.id + ":popularmovies", function(page) {
+    setPageHeader(page, "Popular Movies");
+    page.model.contents = 'grid';
+    cancelCurrentOperation();
+    page.appendItem(plugin.id + ":start", 'video', {
+        icon: Plugin.path + "images/ondemand_on.png",
+    });
+    page.appendItem(plugin.id + ":channels", 'video', {
+        icon: Plugin.path + "images/channels_off.png",
+    });
+    page.appendItem(plugin.id + ":search", 'video', {
+        icon: Plugin.path + "images/search_off.png",
+    });
+    page.appendItem(plugin.id + ":library", 'video', {
+        icon: Plugin.path + "images/library_off.png",
+    });
+    page.appendItem(plugin.id + ":watchhistory", 'video', {
+        icon: Plugin.path + "images/history_off.png",
+    });
+    tmdb.popularMovies(page);
     page.loading = false;
 });
 
@@ -759,6 +512,7 @@ new page.Route(plugin.id + ":search", function(page, query) {
 });
 
 new page.Route(plugin.id + ":searchresults:(.*)", function(page, query) {
+    setPageHeader(page, "Search Results for " + query);
     cancelCurrentOperation();
     page.appendItem(plugin.id + ":start", 'video', {
         icon: Plugin.path + "images/ondemand_off.png",
@@ -779,8 +533,9 @@ new page.Route(plugin.id + ":searchresults:(.*)", function(page, query) {
     page.appendItem(plugin.id + ":searchresults:", 'search', { title: 'Search for Shows, Movies & Channels...' });
     page.appendItem('', 'separator', { title: '', });
     page.loading = true;
-    modules.search(page, query.toLowerCase());
-    setPageHeader(page, "Search Results for " + query);
+    page.model.contents = 'grid';
+    tmdb.Search(page, query.toLowerCase())
+    channels.Search(page, query.toLowerCase());
     page.loading = false;
 });
 
@@ -788,41 +543,7 @@ new page.Route(plugin.id + ":season:(.*)", function(page, title) {
     setPageHeader(page, decodeURIComponent(title));
     page.model.contents = 'grid';
     cancelCurrentOperation();
-
-    // Page background based on the show's backdrop
-    var apiKey = "a0d71cffe2d6693d462af9e4f336bc06";
-    var searchUrl = "https://api.themoviedb.org/3/search/tv?api_key=" + apiKey + "&query=" + encodeURIComponent(title);
-    var searchResponse = http.request(searchUrl);
-    var searchJson = JSON.parse(searchResponse);
-    var type = "show";
-
-    if (searchJson.results && searchJson.results.length > 0) {
-        var show = searchJson.results[0];
-        // Set the background image for the page using the backdrop path
-        if (show.backdrop_path) {
-            page.metadata.background = "https://image.tmdb.org/t/p/original" + show.backdrop_path;
-        }
-
-        var showId = show.id;
-        var seasonsUrl = "https://api.themoviedb.org/3/tv/" + showId + "?api_key=" + apiKey;
-        var seasonsResponse = http.request(seasonsUrl);
-        var seasonsJson = JSON.parse(seasonsResponse);
-        if (seasonsJson.seasons && seasonsJson.seasons.length > 0) {
-            seasonsJson.seasons.forEach(function (season) {
-                var seasonTitle = season.name;
-                var posterPath = season.poster_path ? "https://image.tmdb.org/t/p/w500" + season.poster_path : Plugin.path + "images/cvrntfnd.png";
-                var seasonNumber = season.season_number;
-                page.appendItem(plugin.id + ":episodes:" + showId + ":" + seasonNumber, "video", {
-                    title: seasonTitle,
-                    icon: posterPath,
-                });
-            });
-        } else {
-            page.error("No seasons found for this show");
-        }
-    } else {
-        page.error("No TV show found with the title: " + title);
-    }
+    tmdb.listSeasons(page, title);
     page.loading = false;
 });
 
@@ -836,56 +557,56 @@ new page.Route(plugin.id + ":episodes:(\\d+):(\\d+)", function(page, showId, sea
     }
     setPageHeader(page, headerTitle);
     cancelCurrentOperation();
+    tmdb.listEpisodes(page, showId, seasonNumber);
+    page.loading = false;
+});
 
-    var apiKey = "a0d71cffe2d6693d462af9e4f336bc06";
-    var episodesUrl = "https://api.themoviedb.org/3/tv/" + showId + "/season/" + seasonNumber + "?api_key=" + apiKey;
-    var episodesResponse = http.request(episodesUrl);
-    var episodesJson = JSON.parse(episodesResponse);
-    
-    if (episodesJson.episodes && episodesJson.episodes.length > 0) {
-        var showDetailsUrl = "https://api.themoviedb.org/3/tv/" + showId + "?api_key=" + apiKey;
-        var showDetailsResponse = http.request(showDetailsUrl);
-        var showDetailsJson = JSON.parse(showDetailsResponse);
-        var showTitle = showDetailsJson.name ? showDetailsJson.name : "Unknown Show";
-        
-        // Set the background image for the page using the backdrop path
-        if (showDetailsJson.backdrop_path) {
-            page.metadata.background = "https://image.tmdb.org/t/p/original" + showDetailsJson.backdrop_path;
-        }
+new page.Route(plugin.id + ":details:(.*):(.*):(.*)", function(page, title, imdbid, type) {
+    setPageHeader(page, decodeURIComponent(title));
+    page.model.contents = 'list';
+    cancelCurrentOperation();
+    tmdb.listDetails(page, title, imdbid, type);
+    popup.notify("Welcome To The Information Page! If you wish to skip this page in future, you can turn on Auto-Play in Settings.", 10);
+    page.loading = false;
+});
 
-        episodesJson.episodes.forEach(function (episode) {
-            var episodeTitle = episode.name;
-            var episodeNumber = episode.episode_number < 10 ? "0" + episode.episode_number : episode.episode_number;
-            var cleanedSeasonNumber = seasonNumber < 10 ? "0" + seasonNumber : seasonNumber;
-            var title = showTitle + " S" + cleanedSeasonNumber + "E" + episodeNumber;
-            var posterPath = episode.still_path ? "https://image.tmdb.org/t/p/w500" + episode.still_path : Plugin.path + "images/scrnshtntfnd.png";
-            var episodeDetailsUrl = "https://api.themoviedb.org/3/tv/" + showId + "/season/" + seasonNumber + "/episode/" + episode.episode_number + "?api_key=" + apiKey + "&append_to_response=external_ids";
-            var episodeDetailsResponse = http.request(episodeDetailsUrl);
-            var episodeDetails = JSON.parse(episodeDetailsResponse);
-            var imdbid = episodeDetails.external_ids ? episodeDetails.external_ids.imdb_id : '';
-            var description = episodeDetails.overview || "No description available"; // Fetching description
+new page.Route(plugin.id + ":play:(.*):(.*):(.*)", function(page, title, imdbid, type) {
+    setPageHeader(page, "Searching for best source, please wait..");
+    page.model.contents = 'list';
+    title = decodeURIComponent(title);
+    title = title.replace(/[\[\]{}()\-:]/g, ''); // Remove brackets, dashes, and colons
+    popup.notify('Streamian | Encountering issues? Please report to Reddit r/movian', 10);
+    page.appendItem(plugin.id + ":details:" + title + ":" + imdbid + ":" + type, "video", {
+        title: "Cancel",
+        icon: Plugin.path + "images/cancel.png",
+    });
+    cancelCurrentOperation();
+    addItemToHistory(title, type, imdbid);
+    stream.Scout(page, decodeURIComponent(title), imdbid);
+});
 
-            // Clean up the show title for the query
-            var cleanedShowTitle = encodeURIComponent(showTitle.replace(/[^a-zA-Z0-9\s]/g, '').trim().toLowerCase());
-            var episodeUrl;
-
-            if (service.autoPlay) {
-                episodeUrl = plugin.id + ":play:" + encodeURIComponent(title) + ":" + imdbid + ":episode";
-            } else {
-                episodeUrl = plugin.id + ":details:" + encodeURIComponent(title) + ":" + imdbid + ":episode";
-            }
-
-            // Append item with description and cloned icon as backdrop
-            var item = page.appendItem(episodeUrl, "video", {
-                title: episodeNumber + "). " + episodeTitle,
-                icon: posterPath,
-                description: description, // Adding episode description
-                backdrops: [{url: posterPath}] // Cloning the icon as backdrop
-            });
-        });
-    } else {
-        page.error("No episodes found for this season");
-    }
+new page.Route(plugin.id + ":channels", function(page) {
+    page.model.contents = 'grid';
+    setPageHeader(page, "Channels");
+    cancelCurrentOperation();
+    page.appendItem(plugin.id + ":start", 'video', {
+        icon: Plugin.path + "images/ondemand_off.png",
+    });
+    page.appendItem(plugin.id + ":channels", 'video', {
+        icon: Plugin.path + "images/channels_on.png",
+    });
+    page.appendItem(plugin.id + ":search", 'video', {
+        icon: Plugin.path + "images/search_off.png",
+    });
+    page.appendItem(plugin.id + ":library", 'video', {
+        icon: Plugin.path + "images/library_off.png",
+    });
+    page.appendItem(plugin.id + ":watchhistory", 'video', {
+        icon: Plugin.path + "images/history_off.png",
+    });
+    page.loading = true;
+    channels.Scrape(page);
+    setPageHeader(page, "Channels");
     page.loading = false;
 });
 
@@ -983,21 +704,6 @@ new page.Route('m3u:(.*):(.*)', function(page, pl, title) {
     page.loading = false;
 });
 
-new page.Route(plugin.id + ":play:(.*):(.*):(.*)", function(page, title, imdbid, type) {
-    setPageHeader(page, "Searching for best source, please wait..");
-    page.model.contents = 'list';
-    title = decodeURIComponent(title);
-    title = title.replace(/[\[\]{}()\-:]/g, ''); // Remove brackets, dashes, and colons
-    popup.notify('Streamian | Encountering issues? Please report to Reddit r/movian', 10);
-    page.appendItem(plugin.id + ":details:" + title + ":" + imdbid + ":" + type, "video", {
-        title: "Cancel",
-        icon: Plugin.path + "images/cancel.png",
-    });
-    cancelCurrentOperation();
-    addItemToHistory(title, type, imdbid);
-    consultAddons(page, decodeURIComponent(title), imdbid);
-});
-
 new page.Route(plugin.id + ":playchannel:(.*):(.*):(.*)", function(page, link, title, decodedIcon) {
     setPageHeader(page, "Searching for best source, please wait..");
     page.model.contents = 'list';
@@ -1009,147 +715,26 @@ new page.Route(plugin.id + ":playchannel:(.*):(.*):(.*)", function(page, link, t
 
 });
 
-new page.Route(plugin.id + ":details:(.*):(.*):(.*)", function(page, title, imdbid, type) {
-    setPageHeader(page, decodeURIComponent(title));
-    page.model.contents = 'list';
+new page.Route(plugin.id + ":library", function(page) {
+    setPageHeader(page, "Your Library");
+    page.model.contents = 'grid';
     cancelCurrentOperation();
-
-    var apiKey = "a0d71cffe2d6693d462af9e4f336bc06";
-    var basePosterUrl = "https://image.tmdb.org/t/p/w500/";
-    var baseBackdropUrl = "https://image.tmdb.org/t/p/original/";
-    var description = "No description available";
-    var posterUrl = Plugin.path + "images/default.png"; // Fallback image
-    var background = Plugin.path + "images/default_backdrop.png"; // Fallback background
-
-    // Fetch details for both movies and episodes using IMDb ID
-    if (type === 'movie' || type === 'episode') {
-        var apiUrl = "https://api.themoviedb.org/3/find/" + imdbid + "?api_key=" + apiKey + "&external_source=imdb_id";
-        var response = http.request(apiUrl, {method: 'GET'});
-        var data = showtime.JSONDecode(response.toString());
-
-        if (data.movie_results && data.movie_results.length > 0) {
-            var movie = data.movie_results[0];
-
-            // Fetch basic movie information
-            description = movie.overview || "No description available";
-            posterUrl = movie.poster_path ? basePosterUrl + movie.poster_path : posterUrl;
-            background = movie.backdrop_path ? baseBackdropUrl + movie.backdrop_path : background;
-
-            // Set the background for the page
-            page.metadata.background = background;
-
-            // Fetch movie videos for trailer thumbnails
-            var videosApiUrl = "https://api.themoviedb.org/3/movie/" + movie.id + "/videos?api_key=" + apiKey;
-            var videoResponse = http.request(videosApiUrl, {method: 'GET'});
-            var videoData = showtime.JSONDecode(videoResponse.toString());
-
-            var videoThumbnail = background; // Fallback to backdrop if no video thumbnail
-            if (videoData.results && videoData.results.length > 0) {
-                // Assuming the first video is the main trailer (usually it is)
-                var video = videoData.results[0];
-
-                if (video.site === "YouTube") {
-                    // Construct YouTube thumbnail URL using the YouTube video key
-                    var videoKey = video.key;
-                    videoThumbnail = "https://img.youtube.com/vi/" + videoKey + "/maxresdefault.jpg";
-                }
-            }
-
-            // Add the play item with the video thumbnail as the backdrop
-            page.appendItem(plugin.id + ":play:" + title + ":" + imdbid + ":" + type, "video", {
-                title: "Play",
-                icon: Plugin.path + "images/play.png",
-                description: description,
-                backdrops: [{url: videoThumbnail}], // Use the video thumbnail for the backdrops
-            });
-
-            page.appendItem('', 'separator', {title: ''});
-            page.appendItem('', 'separator', {title: '         Information:                                                                                                                              '});
-            page.appendItem('', 'separator', {title: ''});
-
-            // Fetch runtime from a separate movie details endpoint
-            var movieDetailsUrl = "https://api.themoviedb.org/3/movie/" + movie.id + "?api_key=" + apiKey;
-            var movieDetailsResponse = http.request(movieDetailsUrl);
-            var movieDetails = showtime.JSONDecode(movieDetailsResponse.toString());
-
-            page.appendItem('', 'video', {title: "Vote Average: " + (movie.vote_average ? parseInt(movie.vote_average + 0.5) : "N/A"),
-                icon: Plugin.path + 'images/vote.png',
-                description: description,
-                backdrops: [{url: videoThumbnail}], // Use the video thumbnail
-            });            
-            
-            page.appendItem('', 'video', {title: "Runtime: " + (movieDetails.runtime || "N/A") + " minutes",
-                icon: Plugin.path + 'images/time.png',
-                description: description,
-                backdrops: [{url: videoThumbnail}], // Use the video thumbnail
-            });
-
-        } else if (data.tv_episode_results && data.tv_episode_results.length > 0) {
-            // Handle episode results
-            var episode = data.tv_episode_results[0];
-
-            // Fetch the parent show for the backdrop image
-            var showApiUrl = "https://api.themoviedb.org/3/tv/" + episode.show_id + "?api_key=" + apiKey;
-            var showResponse = http.request(showApiUrl);
-            var showData = showtime.JSONDecode(showResponse.toString());
-
-            description = episode.overview || "No description available";
-            posterUrl = episode.still_path ? basePosterUrl + episode.still_path : posterUrl;
-
-            // Use the show backdrop path from the show data
-            background = showData.backdrop_path ? baseBackdropUrl + showData.backdrop_path : background;
-
-            // Set the background for the page using the show backdrop
-            page.metadata.background = background;
-
-            // Add the play item with the episode still as the backdrop
-            page.appendItem(plugin.id + ":play:" + title + ":" + imdbid + ":" + type, "video", {
-                title: "Play",
-                icon: Plugin.path + "images/play.png",
-                description: description,
-                backdrops: [{url: episode.still_path ? baseBackdropUrl + episode.still_path : background}], // Still use the episode still for the backdrops
-            });
-
-            page.appendItem('', 'separator', {title: ''});
-            page.appendItem('', 'separator', {title: '         Information:                                                                                                                              '});
-            page.appendItem('', 'separator', {title: ''});
-
-            // Append episode information
-            page.appendItem('', 'video', {title: "Air Date: " + (episode.air_date || "N/A"),
-                icon: Plugin.path + 'images/airdate.png',
-                description: description,
-                backdrops: [{url: episode.still_path ? baseBackdropUrl + episode.still_path : background}], // Still use the episode still for the backdrops
-            });
-            
-            page.appendItem('', 'video', {title: "Vote Average: " + (episode.vote_average ? parseInt(episode.vote_average + 0.5) : "N/A"),
-                icon: Plugin.path + 'images/vote.png',
-                description: description,
-                backdrops: [{url: episode.still_path ? baseBackdropUrl + episode.still_path : background}], // Still use the episode still for the backdrops
-            });            
-
-            page.appendItem('', 'video', {
-                icon: Plugin.path + 'images/stars.png',
-                title: "Guest Stars: " + (episode.guest_stars && episode.guest_stars.length > 0 ? episode.guest_stars[0].name : "N/A"),
-                description: description,
-                backdrops: [{url: episode.still_path ? baseBackdropUrl + episode.still_path : background}], // Still use the episode still for the backdrops
-            });
-
-        } else {
-            // No information found; still add the play button
-            page.appendItem(plugin.id + ":play:" + title + ":" + imdbid + ":" + type, "video", {
-                title: "Play",
-                icon: Plugin.path + "images/play.png",
-                description: "No information available for this title.",
-                backdrops: [{url: background}], // Fallback background
-            });
-
-            // Notify user that no information is available
-            popup.notify("No information available for this title. You can still play the video.", 5);
-        }
-    }
-
-    popup.notify("Welcome To The Information Page! If you wish to skip this page in future, you can turn on Auto-Play in Settings.", 10);
-
+    page.appendItem(plugin.id + ":start", 'video', {
+        icon: Plugin.path + "images/ondemand_off.png",
+    });
+    page.appendItem(plugin.id + ":channels", 'video', {
+        icon: Plugin.path + "images/channels_off.png",
+    });
+    page.appendItem(plugin.id + ":search", 'video', {
+        icon: Plugin.path + "images/search_off.png",
+    });
+    page.appendItem(plugin.id + ":library", 'video', {
+        icon: Plugin.path + "images/library_on.png",
+    });
+    page.appendItem(plugin.id + ":watchhistory", 'video', {
+        icon: Plugin.path + "images/history_off.png",
+    });
+    librarypage.List(page);
     page.loading = false;
 });
 
@@ -1172,6 +757,6 @@ new page.Route(plugin.id + ":watchhistory", function(page) {
     page.appendItem(plugin.id + ":watchhistory", 'video', {
         icon: Plugin.path + "images/history_on.png",
     });
-    modules.history(page);
+    history.List(page);
     page.loading = false;
 });
