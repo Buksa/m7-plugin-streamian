@@ -6,7 +6,7 @@ exports.Scout = function (page, title, imdbid) {
 
     // Create a new cancellation token for this instance
     currentCancellationToken = createCancellationToken();
-    const cancellationToken = currentCancellationToken;
+    var cancellationToken = currentCancellationToken;
 
     page.loading = true;
     page.model.contents = 'list';
@@ -21,41 +21,62 @@ exports.Scout = function (page, title, imdbid) {
     function checkCancellation() {
         if (cancellationToken.cancelled) {
             cleanup();
-            throw new Error('Operation cancelled');
+            throw 'Operation cancelled';
         }
     }
 
-    try {
-        // Combine search results and check for cancellations
-        var ytsResults = yts.search(page, title) || [];
-        checkCancellation();
-        var internetArchiveResults = internetarchive.search(page, title) || [];
-        checkCancellation();
-        var eztvResults = eztv.search(page, title) || [];
-        checkCancellation();
-        var tpbResults = tpb.search(page, title) || [];
-        checkCancellation();
+    // Function to get the scraper URLs from the settings dynamically
+    function getScraperUrls() {
+        return [
+            service.addon1url,
+            service.addon2url,
+            service.addon3url,
+            service.addon4url
+        ];
+    }
 
-        // Function to filter results by seeder count
-        function filterResults(results, source) {
-            return results.filter(function(result) {
-                checkCancellation();
-                var parts = result.split(" - ");
-                var seederCount = parseInt(parts[2]) || 0;
-                return seederCount > 0;
-            }).map(function(result) {
-                checkCancellation();
-                return result + " - " + source;
-            });
+    // Function to dynamically load the scraper by its file URL
+    function loadScraper(url) {
+        if (!url) {
+            console.error("Scraper URL not provided");
+            return null;
         }
 
-        ytsResults = filterResults(ytsResults, "Yify Movies");
-        internetArchiveResults = filterResults(internetArchiveResults, "Internet Archive");
-        eztvResults = filterResults(eztvResults, "EZTV");
-        tpbResults = filterResults(tpbResults, "ThePirateBay");
-        checkCancellation();
+        // Get the filename from the URL to use as the add-on name
+        var fileName = url.split('/').pop().replace('.js', '');
 
-        var combinedResults = ytsResults.concat(tpbResults, internetArchiveResults, eztvResults);
+        // Fetch the script text from the URL
+        var scriptText = showtime.httpReq(url).toString();
+
+        // Dynamically create and return the scraper function
+        var scraperFunction = new Function('page', 'title', scriptText + '\nreturn search' + fileName + '(page, title);');
+        return {
+            scraperFunction: scraperFunction,
+            name: fileName // Use the filename as the add-on name
+        };
+    }
+
+    try {
+        // Dynamically load each scraper based on its file URL
+        var scrapers = getScraperUrls().map(loadScraper);
+
+        var combinedResults = [];
+
+        // Run each scraper and collect the results
+        scrapers.forEach(function(scraper) {
+            if (scraper && scraper.scraperFunction) {
+                var results = scraper.scraperFunction(page, title);
+                checkCancellation();
+
+                // Add the scraper name (derived from the file name) to the results
+                combinedResults = combinedResults.concat(
+                    results.map(function(result) {
+                        return result + ' - ' + scraper.name;
+                    })
+                );
+            }
+        });
+
         checkCancellation();
 
         function processResults() {
@@ -98,12 +119,12 @@ exports.Scout = function (page, title, imdbid) {
             // Function to get the best source from a quality range
             function selectBestResult(qualityRegex) {
                 var results = combinedResults.filter(function(item) {
-                    return qualityRegex.test(item.split(" - ")[1]);
+                    return qualityRegex.test(item.split(' - ')[1]);
                 });
                 
                 results.forEach(function(item) {
                     checkCancellation();
-                    var seederCount = parseInt(item.split(" - ")[2]) || 0;
+                    var seederCount = parseInt(item.split(' - ')[2]) || 0;
                     if (seederCount >= minPreferredSeeders && seederCount > bestSeeders) {
                         bestSeeders = seederCount;
                         selectedResult = item;
@@ -127,10 +148,10 @@ exports.Scout = function (page, title, imdbid) {
             // Fallback to "Unknown" quality if no other sources match
             if (!selectedResult) {
                 combinedResults.filter(function(item) {
-                    return item.split(" - ")[1] === "Unknown" &&
-                           parseInt(item.split(" - ")[2]) >= minPreferredSeeders;
+                    return item.split(' - ')[1] === 'Unknown' &&
+                           parseInt(item.split(' - ')[2]) >= minPreferredSeeders;
                 }).forEach(function(item) {
-                    var seederCount = parseInt(item.split(" - ")[2]) || 0;
+                    var seederCount = parseInt(item.split(' - ')[2]) || 0;
                     if (seederCount > bestSeeders) {
                         bestSeeders = seederCount;
                         selectedResult = item;
@@ -141,7 +162,7 @@ exports.Scout = function (page, title, imdbid) {
             // Fallback to the highest seeder count if none meet the preferred seeder criteria
             if (!selectedResult) {
                 combinedResults.forEach(function(item) {
-                    var seederCount = parseInt(item.split(" - ")[2]) || 0;
+                    var seederCount = parseInt(item.split(' - ')[2]) || 0;
                     if (seederCount > bestSeeders) {
                         bestSeeders = seederCount;
                         selectedResult = item;
@@ -150,16 +171,16 @@ exports.Scout = function (page, title, imdbid) {
             }
 
             if (selectedResult) {
-                var parts = selectedResult.split(" - ");
+                var parts = selectedResult.split(' - ');
                 var magnetLink = parts[0];
                 var videoQuality = parts[1];
                 var seederCount = parts[2];
                 var source = parts[3];
                 var vparams;
         
-                if (source === 'Internet Archive') {
-                    popup.notify("Streamian | Streaming from " + source + " direct at " + videoQuality, 10);
-                    vparams = "videoparams:" + JSON.stringify({
+                if (source === 'InternetArchive') {
+                    popup.notify('Streamian | Streaming from ' + source + ' direct at ' + videoQuality, 10);
+                    vparams = 'videoparams:' + JSON.stringify({
                         title: title,
                         canonicalUrl: magnetLink,
                         no_fs_scan: true,
@@ -169,13 +190,13 @@ exports.Scout = function (page, title, imdbid) {
                         imdbid: imdbid
                     });
                 } else {
-                    popup.notify("Streamian | Streaming from " + source + " with " + seederCount + " seeders at " + videoQuality, 10);
-                    vparams = "videoparams:" + JSON.stringify({
+                    popup.notify('Streamian | Streaming from ' + source + ' with ' + seederCount + ' seeders at ' + videoQuality, 10);
+                    vparams = 'videoparams:' + JSON.stringify({
                         title: title,
-                        canonicalUrl: "torrent://" + magnetLink,
+                        canonicalUrl: 'torrent://' + magnetLink,
                         no_fs_scan: true,
                         sources: [{
-                            url: "torrent:video:" + magnetLink
+                            url: 'torrent:video:' + magnetLink
                         }],
                         imdbid: imdbid
                     });
@@ -183,7 +204,7 @@ exports.Scout = function (page, title, imdbid) {
                 page.loading = false;
                 page.redirect(vparams);
             } else {
-                var nostreamnotify = "No suitable streams found for " + title;
+                var nostreamnotify = 'No suitable streams found for ' + title;
                 setPageHeader(page, nostreamnotify);
                 page.loading = false;
             }
@@ -197,7 +218,7 @@ exports.Scout = function (page, title, imdbid) {
 
     } catch (e) {
         // Log any errors and reset the global variable
-        showtime.print("Error in consultAddons: " + e.message);
+        showtime.print('Error in consultAddons: ' + e);
         cleanup();
     }
 };

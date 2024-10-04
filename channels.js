@@ -325,9 +325,6 @@ exports.Scrape = function (page) {
 };
 
 exports.Search = function (page, query) {
-    page.appendItem("", "separator", { title: "" });
-    page.appendItem("", "separator", { title: "        Channels                                                                                                                                                                                                                                                               " });
-    page.appendItem("", "separator", { title: "" });
 
     page.metadata.title = 'Detecting Region, please wait...';
 
