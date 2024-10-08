@@ -31,7 +31,9 @@ exports.Scout = function (page, title, imdbid) {
             service.addon1url,
             service.addon2url,
             service.addon3url,
-            service.addon4url
+            service.addon4url,
+            service.addon5url,
+            service.addon6url
         ];
     }
 
@@ -179,7 +181,7 @@ exports.Scout = function (page, title, imdbid) {
                 var vparams;
         
                 if (source === 'InternetArchive') {
-                    popup.notify('Streamian | Streaming from ' + source + ' direct at ' + videoQuality, 10);
+                    popup.notify(source + ' | Streaming at ' + videoQuality + ', Direct', 10);
                     vparams = 'videoparams:' + JSON.stringify({
                         title: title,
                         canonicalUrl: magnetLink,
@@ -190,7 +192,7 @@ exports.Scout = function (page, title, imdbid) {
                         imdbid: imdbid
                     });
                 } else {
-                    popup.notify('Streamian | Streaming from ' + source + ' with ' + seederCount + ' seeders at ' + videoQuality, 10);
+                    popup.notify(source + ' | Streaming at ' + videoQuality + ' with ' + seederCount + 'Seeders.', 10);
                     vparams = 'videoparams:' + JSON.stringify({
                         title: title,
                         canonicalUrl: 'torrent://' + magnetLink,

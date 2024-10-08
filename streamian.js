@@ -72,6 +72,12 @@ settings.createString('addon3url', 'Slot 3', 'https://raw.githubusercontent.com/
 settings.createString('addon4url', 'Slot 4', 'https://raw.githubusercontent.com/F0R3V3R50F7/m7-plugin-streamian-thepiratebay/refs/heads/main/ThePirateBay.js', function(v) {
     service.addon4url = v;
 });
+settings.createString('addon5url', 'Slot 5', '', function(v) {
+    service.addon5url = v;
+});
+settings.createString('addon6url', 'Slot 6', '', function(v) {
+    service.addon6url = v;
+});
 settings.createDivider('                Data Management:                                                                                                                                                                                                                                                                                                                                                                                                                              ');
 settings.createDivider('');
 
@@ -101,7 +107,7 @@ function cancelCurrentOperation() {
 }
 
 function addtoOnDemandHistory(title, type) {
-    var list = JSON.parse(library.list);
+    var list = JSON.parse(ondemandhistory.list);
     var historyItem = {
       title: title,
       type: type,
@@ -456,6 +462,71 @@ new page.Route(plugin.id + ":start", function(page) {
     page.appendItem(plugin.id + ":watchhistory", 'video', {
         icon: Plugin.path + "images/history_off.png",
     });
+    var ondemandhistoryList = ondemandhistory.list ? JSON.parse(ondemandhistory.list) : [];
+    if (ondemandhistoryList.length >= 4) {
+        var itemCount = 0;  // Counter to track the number of items added
+        var selectedItems = [];  // Array to store selected items
+
+        // Append the "jump back" item
+        page.appendItem(plugin.id + ":watchhistory", 'video', {
+            icon: Plugin.path + "images/jumpback.png",
+        });
+
+        // Select exactly 2 items from the top and 2 items from the bottom
+        var topItems = ondemandhistoryList.slice(0, 2);  // Select first 2 items
+        var bottomItems = ondemandhistoryList.slice(-2); // Select last 2 items
+
+        selectedItems = topItems.concat(bottomItems);  // Combine top and bottom items
+
+        // Process the selected items
+        selectedItems.forEach(function(itemmd) {
+            if (itemCount >= 4) {  // Ensure exactly 4 items are added
+                return;  // Exit if the limit is reached
+            }
+
+            if (itemmd.type === 'episode') {
+                var results = metadata.Scout(itemmd.title, 'episode');
+                results.forEach(function(item) {
+                    if (itemCount >= 4) {
+                        return;  // Exit if 4 items are added
+                    }
+                    var itemParts = item.split(" -|- ");
+                    var url = plugin.id + ":details:" + itemmd.title + ':episode';
+                    var videoItem = page.appendItem(url, "video", {
+                        title: itemmd.title,
+                        icon: itemParts[1].indexOf('https') > -1 ? itemParts[1] : Plugin.path + "images/nostill.png",
+                    });
+                    videoItem.addOptAction('Remove \'' + itemmd.title + '\' from Your Watch History', function() {
+                        removeFromOnDemandHistory(itemmd.title);
+                    });
+
+                    itemCount++;  // Increment the counter
+                });
+            } else {
+                var results = metadata.Scout(itemmd.title, 'movie');
+                results.forEach(function(item) {
+                    if (itemCount >= 4) {
+                        return;  // Exit if 4 items are added
+                    }
+                    var itemParts = item.split(" -|- ");
+                    var url = plugin.id + ":details:" + itemmd.title + ':movie';
+                    var videoItem = page.appendItem(url, "video", {
+                        title: itemmd.title,
+                        icon: itemParts[1].indexOf('https') > -1 ? itemParts[1] : Plugin.path + "images/nostill.png",
+                    });
+                    videoItem.addOptAction('Remove \'' + itemmd.title + '\' from Your Watch History', function() {
+                        removeFromOnDemandHistory(itemmd.title);
+                    });
+
+                    itemCount++;  // Increment the counter
+                });
+            }
+        });
+    }
+
+
+
+
     page.appendItem(plugin.id + ":popularshows", "video", {
         icon: Plugin.path + "images/popular_shows.png"
     });
@@ -500,7 +571,6 @@ new page.Route(plugin.id + ":start", function(page) {
             });
         });
     }
-    page.appendItem("", "separator", { title: "More Coming Soon!" });
     popup.notify('Streamian | No Streams Available? Make sure EZTVx.to, YTS.mx, TPB.party and Archive.org are unblocked.', 10);
     page.loading = false;
 });
@@ -509,6 +579,8 @@ new page.Route(plugin.id + ":popularshows", function(page) {
     setPageHeader(page, "Popular Shows");
     page.model.contents = 'grid';
     cancelCurrentOperation();
+    
+    // Add the menu items
     page.appendItem(plugin.id + ":start", 'video', {
         icon: Plugin.path + "images/ondemand_on.png",
     });
@@ -524,24 +596,66 @@ new page.Route(plugin.id + ":popularshows", function(page) {
     page.appendItem(plugin.id + ":watchhistory", 'video', {
         icon: Plugin.path + "images/history_off.png",
     });
-    var query = 'popularshows'
+
+    var query = 'popularshows';
     var results = metadata.Scout(query.toLowerCase(), 'query');
     if (results && results.length > 0) {
-        results.forEach(function (item) {
+        var genresMap = {};  // Object to group items by genre
+        var uniqueTitles = {};  // Object to track unique titles
+
+        // Group the results by genre
+        results.forEach(function(item) {
             var itemParts = item.split(" -|- ");
-            var url = plugin.id + ":show:" + itemParts[0];
-            videoItem = page.appendItem(url, "video", {
-                title: itemParts[0],
-                icon: itemParts[1]
-            });
-            videoItem.addOptAction('Add \'' + itemParts[0] + '\' to Your Library', function() {
-                addToLibrary(itemParts[0], 'show', itemParts[1]);
-            });
-            videoItem.addOptAction('Remove \'' + itemParts[0] + '\' from Your Library', function() {
-                removeFromLibrary(itemParts[0]);
-            });
+            var title = itemParts[0];
+            var icon = itemParts[1];
+            var genre = decodeURIComponent(itemParts[3]);
+            
+            // Skip if genre is 'Unknown' or undefined
+            if (genre !== 'Unknown' && genre) {
+                // Check for duplicates using the title
+                if (!uniqueTitles[title]) {
+                    uniqueTitles[title] = true;  // Mark this title as added
+
+                    // If the genre doesn't exist in the map, create an array for it
+                    if (!genresMap[genre]) {
+                        genresMap[genre] = [];
+                    }
+
+                    // Add the item to the genre array
+                    genresMap[genre].push({
+                        title: title,
+                        icon: icon,
+                        url: plugin.id + ":show:" + title
+                    });
+                }
+            }
         });
+
+        // Iterate through the genres and display each genre
+        for (var genre in genresMap) {
+            if (genresMap[genre].length >= 4) {
+                page.appendItem(plugin.id + ":genre:" + genre + ':show', "video", {
+                    title: genre,
+                    icon: Plugin.path + 'images/showall.png'
+                });
+
+                // Display only 4 items per genre
+                genresMap[genre].slice(0, 4).forEach(function(item) {
+                    var videoItem = page.appendItem(item.url, "video", {
+                        title: item.title,
+                        icon: item.icon
+                    });
+                    videoItem.addOptAction('Add \'' + item.title + '\' to Your Library', function() {
+                        addToLibrary(item.title, 'show', item.icon);
+                    });
+                    videoItem.addOptAction('Remove \'' + item.title + '\' from Your Library', function() {
+                        removeFromLibrary(item.title);
+                    });
+                });
+            }
+        }
     }
+    
     page.loading = false;
 });
 
@@ -549,6 +663,8 @@ new page.Route(plugin.id + ":popularmovies", function(page) {
     setPageHeader(page, "Popular Movies");
     page.model.contents = 'grid';
     cancelCurrentOperation();
+
+    // Add the menu items
     page.appendItem(plugin.id + ":start", 'video', {
         icon: Plugin.path + "images/ondemand_on.png",
     });
@@ -564,24 +680,129 @@ new page.Route(plugin.id + ":popularmovies", function(page) {
     page.appendItem(plugin.id + ":watchhistory", 'video', {
         icon: Plugin.path + "images/history_off.png",
     });
-    var query = 'popularmovies'
+    
+    var query = 'popularmovies';
     var results = metadata.Scout(query.toLowerCase(), 'query');
+    
     if (results && results.length > 0) {
-        results.forEach(function (item) {
+        var genresMap = {};  // Object to group items by genre
+        var uniqueTitles = {};  // Object to track unique titles
+
+        // Group the results by genre
+        results.forEach(function(item) {
             var itemParts = item.split(" -|- ");
-            url = plugin.id + ":details:" + itemParts[0] + ':movie';
-            videoItem = page.appendItem(url, "video", {
-                title: itemParts[0],
-                icon: itemParts[1]
-            });
-            videoItem.addOptAction('Add \'' + itemParts[0] + '\' to Your Library', function() {
-                addToLibrary(itemParts[0], 'movie', itemParts[1]);
-            });
-            videoItem.addOptAction('Remove \'' + itemParts[0] + '\' from Your Library', function() {
-                removeFromLibrary(itemParts[0]);
-            });
+            var title = itemParts[0];
+            var icon = itemParts[1];
+            var genre = decodeURIComponent(itemParts[3]);
+            
+            // Skip if genre is 'Unknown' or undefined
+            if (genre !== 'Unknown' && genre) {
+                // Check for duplicates using the title
+                if (!uniqueTitles[title]) {
+                    uniqueTitles[title] = true;  // Mark this title as added
+
+                    // If the genre doesn't exist in the map, create an array for it
+                    if (!genresMap[genre]) {
+                        genresMap[genre] = [];
+                    }
+
+                    // Add the item to the genre array
+                    genresMap[genre].push({
+                        title: title,
+                        icon: icon,
+                        url: plugin.id + ":details:" + title + ':movie'
+                    });
+                }
+            }
+        });
+
+        // Iterate through the genres and display each genre
+        for (var genre in genresMap) {
+            if (genresMap[genre].length >= 4) {
+                page.appendItem(plugin.id + ":genre:" + genre + ':movie', "video", {
+                    title: genre,
+                    icon: Plugin.path + 'images/showall.png'
+                });
+                
+                // Display all 4 items for this genre
+                genresMap[genre].slice(0, 4).forEach(function(item) {
+                    var videoItem = page.appendItem(item.url, "video", {
+                        title: item.title,
+                        icon: item.icon
+                    });
+                    videoItem.addOptAction('Add \'' + item.title + '\' to Your Library', function() {
+                        addToLibrary(item.title, 'movie', item.icon);
+                    });
+                    videoItem.addOptAction('Remove \'' + item.title + '\' from Your Library', function() {
+                        removeFromLibrary(item.title);
+                    });
+                });
+            }
+        }
+    }
+    
+    page.loading = false;
+});
+
+new page.Route(plugin.id + ":genre:(.*):(.*)", function(page, genre, type) {
+    page.model.contents = 'grid';
+    setPageHeader(page, genre);
+    cancelCurrentOperation();
+
+    // Append your menu items (unchanged)
+    page.appendItem(plugin.id + ":start", 'video', {
+        icon: Plugin.path + "images/ondemand_on.png",
+    });
+    page.appendItem(plugin.id + ":channels", 'video', {
+        icon: Plugin.path + "images/channels_off.png",
+    });
+    page.appendItem(plugin.id + ":search", 'video', {
+        icon: Plugin.path + "images/search_off.png",
+    });
+    page.appendItem(plugin.id + ":library", 'video', {
+        icon: Plugin.path + "images/library_off.png",
+    });
+    page.appendItem(plugin.id + ":watchhistory", 'video', {
+        icon: Plugin.path + "images/history_off.png",
+    });
+
+    // Adjust the query type based on the passed type ('show' or 'movie')
+    var query = type === 'movie' ? 'popularmovies' : 'popularshows';  // Set the query based on the type
+
+    var results = metadata.Scout(query.toLowerCase(), 'query', 30);  // Retrieve results from the API
+
+    if (results && results.length > 0) {
+        var uniqueTitles = {};  // Object to track unique titles
+
+        // Process the results to filter by the specified genre
+        results.forEach(function(item) {
+            var itemParts = item.split(" -|- ");
+            var title = itemParts[0];
+            var icon = itemParts[1];
+            var itemGenre = decodeURIComponent(itemParts[3]);
+            var type = itemParts[2];
+
+            // Only show items that match the genre passed in the route
+            if (itemGenre === genre && !uniqueTitles[title]) {
+                uniqueTitles[title] = true;  // Mark this title as added
+
+                // Append the item to the page
+                var videoItem = page.appendItem(plugin.id + ":" + type + ":" + title, "video", {
+                    title: title,
+                    icon: icon
+                });
+
+                // Add options for adding/removing from the library
+                videoItem.addOptAction('Add \'' + title + '\' to Your Library', function() {
+                    addToLibrary(title, type, icon);  // Use 'type' for consistency in adding/removing
+                });
+                videoItem.addOptAction('Remove \'' + title + '\' from Your Library', function() {
+                    removeFromLibrary(title);
+                });
+            }
         });
     }
+
     page.loading = false;
 });
 
@@ -740,7 +961,7 @@ new page.Route(plugin.id + ":details:(.*):(.*)", function(page, query, type) {
             page.appendItem(url, "video", {
                 title: "Play",
                 description: itemParts[5],
-                icon: itemParts[1].indexOf('https') > -1 ? itemParts[1] : Plugin.path + "images/nostill.png",
+                icon: Plugin.path + "images/play.png",
                 backdrops: itemParts[1].indexOf('https') > -1 ? [{url: itemParts[1]}] : [{url: Plugin.path + "images/nostill.png"}],
             });
             page.appendItem('', 'separator', {title: ''});

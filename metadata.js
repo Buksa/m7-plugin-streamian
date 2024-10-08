@@ -1,6 +1,6 @@
 // TMDB Metadata Scout for Streamian | M7 / Movian Media Center
 // Author: F0R3V3R50F7
-exports.Scout = function (query, type) {
+exports.Scout = function (query, type, maxPages) {
     var apiKey = "a0d71cffe2d6693d462af9e4f336bc06";
     var posterEndpoint = "https://image.tmdb.org/t/p/w500";
     var results = [];
@@ -298,60 +298,90 @@ exports.Scout = function (query, type) {
 
     if (type === 'query') {
         var apiUrl;
-    
-        // Check if query is for popular shows or movies
-        if (query === 'popularshows') {
-            apiUrl = "https://api.themoviedb.org/3/tv/popular?api_key=" + apiKey;
-        } else if (query === 'popularmovies') {
-            apiUrl = "https://api.themoviedb.org/3/movie/popular?api_key=" + apiKey;
-        } else {
-            // Default search query if not popular shows/movies
-            apiUrl = "https://api.themoviedb.org/3/search/multi?api_key=" + apiKey + "&query=" + encodeURIComponent(query);
+        var maxPages = maxPages || 10; // Change this to get more or fewer pages
+        var results = [];
+        
+        // Genre mapping (you can expand this or fetch from TMDB's genre API)
+        var genreMap = {
+            28: 'Action',
+            12: 'Adventure',
+            16: 'Animation',
+            35: 'Comedy',
+            80: 'Crime',
+            18: 'Drama',
+            14: 'Fantasy',
+            27: 'Horror',
+            878: 'Science Fiction',
+            53: 'Thriller',
+            // Add more genre mappings as needed
+        };
+        
+        // Helper function to get genres as a string
+        function getGenres(genreIds) {
+            return genreIds && genreIds.length > 0
+                ? genreIds.map(function(id) { return genreMap[id]; }).filter(Boolean).join(', ')
+                : 'Unknown'; // Fallback if no genre or mapping is missing
         }
     
-        var response = http.request(apiUrl);
-        var json = JSON.parse(response);
+        // Fetch results from multiple pages
+        for (var page = 1; page <= maxPages; page++) {
+            // Check if query is for popular shows or movies
+            if (query === 'popularshows') {
+                apiUrl = "https://api.themoviedb.org/3/tv/popular?api_key=" + apiKey + "&page=" + page;
+            } else if (query === 'popularmovies') {
+                apiUrl = "https://api.themoviedb.org/3/movie/popular?api_key=" + apiKey + "&page=" + page;
+            } else {
+                // Default search query if not popular shows/movies
+                apiUrl = "https://api.themoviedb.org/3/search/multi?api_key=" + apiKey + "&query=" + encodeURIComponent(query) + "&page=" + page;
+            }
+        
+            var response = http.request(apiUrl);
+            var json = JSON.parse(response);
     
-        // Process TMDB results if any
-        if (json.results && json.results.length > 0) {
-            var movies = [];
-            var tvShows = [];
-    
-            // Categorize results into movies and TV shows
-            json.results.forEach(function (item) {
-                if (item.media_type === 'movie' || query === 'popularmovies') {
-                    movies.push(item);
-                } else if (item.media_type === 'tv' || query === 'popularshows') {
-                    tvShows.push(item);
+            // Process TMDB results if any
+            if (json.results && json.results.length > 0) {
+                var movies = [];
+                var tvShows = [];
+        
+                // Categorize results into movies and TV shows
+                json.results.forEach(function(item) {
+                    if (item.media_type === 'movie' || query === 'popularmovies') {
+                        movies.push(item);
+                    } else if (item.media_type === 'tv' || query === 'popularshows') {
+                        tvShows.push(item);
+                    }
+                });
+        
+                // Process movies if there are any
+                if (movies.length > 0) {
+                    movies.forEach(function(item) {
+                        var type = 'movie';
+                        var title = item.title || item.original_title;
+                        var icon = item.poster_path ? posterEndpoint + item.poster_path : '';
+                        var releaseDate = item.release_date ? item.release_date.substring(0, 4) : 'Unknown';
+                        var genres = getGenres(item.genre_ids); // Get genres
+                        title = title + " (" + releaseDate + ")";
+                        var itemString = title + " -|- " + icon + " -|- " + type + " -|- " + encodeURIComponent(genres);
+                        results.push(itemString);
+                    });
                 }
-            });
-    
-            // Process movies if there are any
-            if (movies.length > 0) {
-                movies.forEach(function (item) {
-                    var type = 'movie';
-                    var title = item.title || item.original_title;
-                    var icon = item.poster_path ? posterEndpoint + item.poster_path : '';
-                    var releaseDate = item.release_date ? item.release_date.substring(0, 4) : 'Unknown';
-                    title = title + " (" + releaseDate + ")";
-                    var item = title + " -|- " + icon + " -|- " + type;
-                    results.push(item);
-                });
-            }
-    
-            // Process TV shows if there are any
-            if (tvShows.length > 0) {
-                tvShows.forEach(function (item) {
-                    var type = 'show';
-                    var title = item.name || item.original_name;
-                    var icon = item.poster_path ? posterEndpoint + item.poster_path : '';
-                    var firstAirDate = item.first_air_date ? item.first_air_date.substring(0, 4) : 'Unknown';
-                    title = title + (firstAirDate ? " (" + firstAirDate + ")" : '');
-                    var item = title + " -|- " + icon + " -|- " + type;
-                    results.push(item);
-                });
+        
+                // Process TV shows if there are any
+                if (tvShows.length > 0) {
+                    tvShows.forEach(function(item) {
+                        var type = 'show';
+                        var title = item.name || item.original_name;
+                        var icon = item.poster_path ? posterEndpoint + item.poster_path : '';
+                        var firstAirDate = item.first_air_date ? item.first_air_date.substring(0, 4) : 'Unknown';
+                        var genres = getGenres(item.genre_ids); // Get genres
+                        title = title + (firstAirDate ? " (" + firstAirDate + ")" : '');
+                        var itemString = title + " -|- " + icon + " -|- " + type + " -|- " + encodeURIComponent(genres);
+                        results.push(itemString);
+                    });
+                }
             }
         }
-    }    
+        return results;
+    }
     return results;
 };
