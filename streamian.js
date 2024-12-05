@@ -389,9 +389,7 @@ function scrapeSamsung(page, limit, query) {
       return;
     }
     console.log("User's detected region: " + userRegion);
-    
-    // Fetch the .channels.json.gz file
-    var response = http.request("https://i.mjh.nz/SamsungTVPlus/.channels.json.gz", {
+    var response = http.request("https://raw.githubusercontent.com/F0R3V3R50F7/m7-plugin-streamian/refs/heads/main/playlists/samtv.json", {
       'method': "GET",
       'headers': {
         'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36",
@@ -399,136 +397,72 @@ function scrapeSamsung(page, limit, query) {
         'Connection': 'keep-alive'
       }
     });
-  
-    if (!!response && response.length > 0) {
-      console.log("Response length: " + response.length);
-      
-      // Convert response to a binary string (to handle the GZIP data)
-      var gzipData = response.toString('binary');
-      
-      // Decompress GZIP to get the channels.json content
-      var decompressedData = decompressGZIP(gzipData);
-  
-      if (decompressedData) {
-        // Convert decompressed data into a UTF-8 string
-        var jsonString = String.fromCharCode.apply(null, new Uint8Array(decompressedData));
-        console.log("Decompressed data: " + jsonString.slice(0, 500));  // Log first 500 chars for checking
-
-        // Parse the JSON string to get the actual channels data
-        var jsonData = showtime.JSONDecode(jsonString);
-        if (jsonData) {
-          console.log("Parsed JSON: ", jsonData);
-
-          var allChannels = jsonData.regions;
-          var channels = {};
-          if (allChannels[userRegion]) {
-            channels = allChannels[userRegion].channels;
-          } else {
-            console.log("Region not found in the data.");
-            page.appendItem('', 'video', {
-              'icon': plugin.path + 'images/regionerror.png'
-            });
-            return;
-          }
-
-          var groupedChannels = {};
-          for (var key in channels) {
-            if (channels.hasOwnProperty(key)) {
-              var channel = channels[key];
-              var genre = channel.group;
-              var url = channel.url;
-              if (!url || channel.license_url) {
-                continue;
-              }
-              if (!groupedChannels[genre]) {
-                groupedChannels[genre] = [];
-              }
-              groupedChannels[genre].push({
-                'id': key,
-                'name': channel.name,
-                'logo': channel.logo,
-                'url': url
-              });
-            }
-          }
-  
-          page.metadata.title = "Loading Channels, please wait...";
-          var globalCount = 0;
-          for (var genre in groupedChannels) {
-            if (groupedChannels.hasOwnProperty(genre)) {
-              if (!limit) {
-                page.appendItem(null, "separator", {
-                  'title': ''
-                });
-                page.appendItem(null, 'separator', {
-                  'title': genre
-                });
-                page.appendItem(null, "separator", {
-                  'title': ''
-                });
-              }
-              var channelsInGenre = groupedChannels[genre];
-              for (var j = 0; j < channelsInGenre.length; j++) {
-                if (limit && globalCount >= limit) {
-                  break;
-                }
-                if (query && channelsInGenre[j].name.toLowerCase().indexOf(query.toLowerCase()) === -1) {
-                  continue;
-                }
-                addChannel(page, channelsInGenre[j].url, channelsInGenre[j].name, channelsInGenre[j].logo);
-                globalCount++;
-              }
-              if (limit && globalCount >= limit) {
-                break;
-              }
-            }
-          }
-        } else {
-          console.log("Failed to decode JSON.");
-        }
+    if (!!response) {
+      var allChannels = showtime.JSONDecode(response.toString()).regions;
+      var channels = {};
+      if (allChannels[userRegion]) {
+        channels = allChannels[userRegion].channels;
       } else {
-        console.log("Decompression failed.");
+        console.log("Region not found in Samsung data, displaying custom icon");
+        page.appendItem('', 'video', {
+          'icon': plugin.path + 'images/regionerror.png'
+        });
+        return;
+      }
+      var groupedChannels = {};
+      for (var key in channels) {
+        if (channels.hasOwnProperty(key)) {
+          var channel = channels[key];
+          var genre = channel.group;
+          var url = channel.url;
+          if (!url || channel.license_url) {
+            continue;
+          }
+          if (!groupedChannels[genre]) {
+            groupedChannels[genre] = [];
+          }
+          groupedChannels[genre].push({
+            'id': key,
+            'name': channel.name,
+            'logo': channel.logo,
+            'url': url
+          });
+        }
+      }
+      page.metadata.title = "Loading Channels, please wait...";
+      var globalCount = 0x0;
+      for (var genre in groupedChannels) {
+        if (groupedChannels.hasOwnProperty(genre)) {
+          if (!limit) {
+            page.appendItem(null, "separator", {
+              'title': ''
+            });
+            page.appendItem(null, 'separator', {
+              'title': genre
+            });
+            page.appendItem(null, "separator", {
+              'title': ''
+            });
+          }
+          var channelsInGenre = groupedChannels[genre];
+          for (var j = 0x0; j < channelsInGenre.length; j++) {
+            if (limit && globalCount >= limit) {
+              break;
+            }
+            if (query && channelsInGenre[j].name.toLowerCase().indexOf(query.toLowerCase()) === -0x1) {
+              continue;
+            }
+            addChannel(page, channelsInGenre[j].url, channelsInGenre[j].name, channelsInGenre[j].logo);
+            globalCount++;
+          }
+          if (limit && globalCount >= limit) {
+            break;
+          }
+        }
       }
     } else {
       console.log("Error fetching Samsung TV Plus channels.");
     }
-}
-  
-// GZIP decompression function (same as before)
-function decompressGZIP(gzipData) {
-    // Skip the GZIP header (first 10 bytes) and footer (last 8 bytes)
-    var compressedData = gzipData.slice(10, gzipData.length - 8);
-
-    var output = [];
-    var bitStream = 0;
-    var bitCount = 0;
-    var byte;
-    
-    // Simple function to read n bits from the stream
-    function readBits(n) {
-        while (bitCount < n) {
-            byte = compressedData.shift(); // Read next byte
-            bitStream |= (byte << bitCount);
-            bitCount += 8;
-        }
-        var result = bitStream & ((1 << n) - 1);
-        bitStream >>>= n;
-        bitCount -= n;
-        return result;
-    }
-    
-    // Inflate the compressed data (rudimentary approach)
-    while (compressedData.length > 0) {
-        var code = readBits(8);  // Read 8 bits
-        if (code < 256) {
-            output.push(code);  // Literal byte, add to output
-        } else {
-            console.log("Unsupported code or incomplete implementation.");
-            break;  // Stop here; full decompression requires handling lengths/distances
-        }
-    }
-
-    return output;
 }
 
 function scrapePluto(page, limit, query) {
