@@ -378,7 +378,157 @@ function iprotM3UParser(page, pl, specifiedGroup, limit, query) {  // by iprot -
 }
 
 function scrapeSamsung(page, limit, query) {
-    function _0x4fe3(){var _0x5df6e8=['2077281iaIJld','Starting\x20Samsung\x20TV\x20Plus\x20channel\x20fetch...','appendItem','toString','channels','411071cRBkpW','Loading\x20Channels,\x20please\x20wait...','JSONDecode','toLowerCase','127622rtwLvI','315xWJFVz','22698mlXwNW','regions','title','Region\x20not\x20found,\x20displaying\x20custom\x20icon','log','logo','35BUUqDL','User\x27s\x20detected\x20region:\x20','https://i.mjh.nz/SamsungTVPlus/.app.json','name','metadata','hasOwnProperty','227841oPHTFb','Region\x20not\x20found\x20in\x20Samsung\x20data,\x20displaying\x20custom\x20icon','push','168296XVpuhU','video','6WTHgXN','path','Detecting\x20Region,\x20please\x20wait...','Error\x20fetching\x20Samsung\x20TV\x20Plus\x20channels.','separator','Mozilla/5.0\x20(Windows\x20NT\x2010.0;\x20Win64;\x20x64)\x20AppleWebKit/537.36\x20(KHTML,\x20like\x20Gecko)\x20Chrome/85.0.4183.102\x20Safari/537.36','length','330mmieCk','1254736ioiYOK','url','GET'];_0x4fe3=function(){return _0x5df6e8;};return _0x4fe3();}var _0xb19bac=_0x329c;(function(_0x288d10,_0x376c44){var _0x487359=_0x329c,_0xa18770=_0x288d10();while(!![]){try{var _0xc43ddd=parseInt(_0x487359(0xc0))/0x1+-parseInt(_0x487359(0xd7))/0x2*(parseInt(_0x487359(0xd2))/0x3)+parseInt(_0x487359(0xdf))/0x4+-parseInt(_0x487359(0xc5))/0x5*(-parseInt(_0x487359(0xc6))/0x6)+-parseInt(_0x487359(0xcc))/0x7*(-parseInt(_0x487359(0xd5))/0x8)+-parseInt(_0x487359(0xbb))/0x9+parseInt(_0x487359(0xde))/0xa*(-parseInt(_0x487359(0xc4))/0xb);if(_0xc43ddd===_0x376c44)break;else _0xa18770['push'](_0xa18770['shift']());}catch(_0x264395){_0xa18770['push'](_0xa18770['shift']());}}}(_0x4fe3,0x375c1));var APP_URL=_0xb19bac(0xce);console[_0xb19bac(0xca)](_0xb19bac(0xbc)),page[_0xb19bac(0xd0)][_0xb19bac(0xc8)]=_0xb19bac(0xd9);var userRegion=getUserLocation();if(!userRegion){console['log'](_0xb19bac(0xc9)),page[_0xb19bac(0xbd)](null,_0xb19bac(0xd6),{'icon':plugin[_0xb19bac(0xd8)]+'images/regionerror.png'});return;}console[_0xb19bac(0xca)](_0xb19bac(0xcd)+userRegion);function _0x329c(_0x83f604,_0xb87c8){var _0x4fe35b=_0x4fe3();return _0x329c=function(_0x329c22,_0x4a92dc){_0x329c22=_0x329c22-0xba;var _0xc5f316=_0x4fe35b[_0x329c22];return _0xc5f316;},_0x329c(_0x83f604,_0xb87c8);}var response=http['request'](APP_URL,{'method':_0xb19bac(0xba),'headers':{'User-Agent':_0xb19bac(0xdc),'Accept':'application/json','Connection':'keep-alive'}});if(!!response){var allChannels=showtime[_0xb19bac(0xc2)](response[_0xb19bac(0xbe)]())[_0xb19bac(0xc7)],channels={};if(allChannels[userRegion])channels=allChannels[userRegion][_0xb19bac(0xbf)];else{console[_0xb19bac(0xca)](_0xb19bac(0xd3)),page['appendItem']('','video',{'icon':plugin['path']+'images/regionerror.png'});return;}var groupedChannels={};for(var key in channels){if(channels[_0xb19bac(0xd1)](key)){var channel=channels[key],genre=channel['group'],url=channel[_0xb19bac(0xe0)];if(!url||channel['license_url'])continue;!groupedChannels[genre]&&(groupedChannels[genre]=[]),groupedChannels[genre][_0xb19bac(0xd4)]({'id':key,'name':channel[_0xb19bac(0xcf)],'logo':channel[_0xb19bac(0xcb)],'url':url});}}page[_0xb19bac(0xd0)][_0xb19bac(0xc8)]=_0xb19bac(0xc1);var globalCount=0x0;for(var genre in groupedChannels){if(groupedChannels[_0xb19bac(0xd1)](genre)){!limit&&(page[_0xb19bac(0xbd)](null,_0xb19bac(0xdb),{'title':''}),page[_0xb19bac(0xbd)](null,'separator',{'title':genre}),page['appendItem'](null,_0xb19bac(0xdb),{'title':''}));var channelsInGenre=groupedChannels[genre];for(var j=0x0;j<channelsInGenre[_0xb19bac(0xdd)];j++){if(limit&&globalCount>=limit)break;if(query&&channelsInGenre[j]['name']['toLowerCase']()['indexOf'](query[_0xb19bac(0xc3)]())===-0x1)continue;addChannel(page,channelsInGenre[j][_0xb19bac(0xe0)],channelsInGenre[j][_0xb19bac(0xcf)],channelsInGenre[j][_0xb19bac(0xcb)]),globalCount++;}if(limit&&globalCount>=limit)break;}}}else console[_0xb19bac(0xca)](_0xb19bac(0xda));
+    console.log("Starting Samsung TV Plus channel fetch...");
+    page.metadata.title = "Detecting Region, please wait...";
+    var userRegion = getUserLocation();
+    if (!userRegion) {
+      console.log("Region not found, displaying custom icon");
+      page.appendItem(null, "video", {
+        'icon': plugin.path + 'images/regionerror.png'
+      });
+      return;
+    }
+    console.log("User's detected region: " + userRegion);
+    
+    // Fetch the .channels.json.gz file
+    var response = http.request("https://i.mjh.nz/SamsungTVPlus/.channels.json.gz", {
+      'method': "GET",
+      'headers': {
+        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36",
+        'Accept': 'application/json',
+        'Connection': 'keep-alive'
+      }
+    });
+  
+    if (!!response && response.length > 0) {
+      console.log("Response length: " + response.length);
+      
+      // Convert response to a binary string (to handle the GZIP data)
+      var gzipData = response.toString('binary');
+      
+      // Decompress GZIP to get the channels.json content
+      var decompressedData = decompressGZIP(gzipData);
+  
+      if (decompressedData) {
+        // Convert decompressed data into a UTF-8 string
+        var jsonString = String.fromCharCode.apply(null, new Uint8Array(decompressedData));
+        console.log("Decompressed data: " + jsonString.slice(0, 500));  // Log first 500 chars for checking
+
+        // Parse the JSON string to get the actual channels data
+        var jsonData = showtime.JSONDecode(jsonString);
+        if (jsonData) {
+          console.log("Parsed JSON: ", jsonData);
+
+          var allChannels = jsonData.regions;
+          var channels = {};
+          if (allChannels[userRegion]) {
+            channels = allChannels[userRegion].channels;
+          } else {
+            console.log("Region not found in the data.");
+            page.appendItem('', 'video', {
+              'icon': plugin.path + 'images/regionerror.png'
+            });
+            return;
+          }
+
+          var groupedChannels = {};
+          for (var key in channels) {
+            if (channels.hasOwnProperty(key)) {
+              var channel = channels[key];
+              var genre = channel.group;
+              var url = channel.url;
+              if (!url || channel.license_url) {
+                continue;
+              }
+              if (!groupedChannels[genre]) {
+                groupedChannels[genre] = [];
+              }
+              groupedChannels[genre].push({
+                'id': key,
+                'name': channel.name,
+                'logo': channel.logo,
+                'url': url
+              });
+            }
+          }
+  
+          page.metadata.title = "Loading Channels, please wait...";
+          var globalCount = 0;
+          for (var genre in groupedChannels) {
+            if (groupedChannels.hasOwnProperty(genre)) {
+              if (!limit) {
+                page.appendItem(null, "separator", {
+                  'title': ''
+                });
+                page.appendItem(null, 'separator', {
+                  'title': genre
+                });
+                page.appendItem(null, "separator", {
+                  'title': ''
+                });
+              }
+              var channelsInGenre = groupedChannels[genre];
+              for (var j = 0; j < channelsInGenre.length; j++) {
+                if (limit && globalCount >= limit) {
+                  break;
+                }
+                if (query && channelsInGenre[j].name.toLowerCase().indexOf(query.toLowerCase()) === -1) {
+                  continue;
+                }
+                addChannel(page, channelsInGenre[j].url, channelsInGenre[j].name, channelsInGenre[j].logo);
+                globalCount++;
+              }
+              if (limit && globalCount >= limit) {
+                break;
+              }
+            }
+          }
+        } else {
+          console.log("Failed to decode JSON.");
+        }
+      } else {
+        console.log("Decompression failed.");
+      }
+    } else {
+      console.log("Error fetching Samsung TV Plus channels.");
+    }
+}
+  
+// GZIP decompression function (same as before)
+function decompressGZIP(gzipData) {
+    // Skip the GZIP header (first 10 bytes) and footer (last 8 bytes)
+    var compressedData = gzipData.slice(10, gzipData.length - 8);
+
+    var output = [];
+    var bitStream = 0;
+    var bitCount = 0;
+    var byte;
+    
+    // Simple function to read n bits from the stream
+    function readBits(n) {
+        while (bitCount < n) {
+            byte = compressedData.shift(); // Read next byte
+            bitStream |= (byte << bitCount);
+            bitCount += 8;
+        }
+        var result = bitStream & ((1 << n) - 1);
+        bitStream >>>= n;
+        bitCount -= n;
+        return result;
+    }
+    
+    // Inflate the compressed data (rudimentary approach)
+    while (compressedData.length > 0) {
+        var code = readBits(8);  // Read 8 bits
+        if (code < 256) {
+            output.push(code);  // Literal byte, add to output
+        } else {
+            console.log("Unsupported code or incomplete implementation.");
+            break;  // Stop here; full decompression requires handling lengths/distances
+        }
+    }
+
+    return output;
 }
 
 function scrapePluto(page, limit, query) {

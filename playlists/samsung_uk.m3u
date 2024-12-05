@@ -1,0 +1,47 @@
+#EXTM3U url-tvg=""
+#EXTINF:-1 tvg-id="BeanoTV.uk" tvg-name="Beano TV" tvg-logo="https://tvpnlogopeu.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/GBBA330002536_20220914T041001SQUARE.png_20220914041001.png" group-title="(no group)",Beano TV
+https://beanostudios-beanotv-1-gb.samsung.wurl.tv/playlist.m3u8
+#EXTINF:-1 tvg-id="BloombergTVPlus.us" tvg-name="Bloomberg TV+" tvg-logo="https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/INBA5100021WP_20240131T032221SQUARE.png_20240131032222.png" group-title="(no group)",Bloomberg TV+
+https://bloomberg-bloombergtv-1-gb.samsung.wurl.tv/manifest/playlist.m3u8
+#EXTINF:-1 tvg-id="ClubbingTV.fr" tvg-name="Clubbing TV" tvg-logo="https://tvpnlogopeu.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/ITBB1900001O3_20241022T051316SQUARE.png" group-title="(no group)",Clubbing TV
+https://clubbingtv-samsunguk.amagi.tv/playlist.m3u8
+#EXTINF:-1 tvg-id="(no tvg-id)" tvg-name="Comedy Channel" tvg-logo="https://tvpnlogopeu.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/DEAK3504500A_20221026T004354SQUARE.png_20221026004355.png" group-title="(no group)",Comedy Channel
+https://uksono1-samsunguk.amagi.tv/playlist.m3u8
+#EXTINF:-1 tvg-id="EDGEsport.uk" tvg-name="EDGEsport" tvg-logo="https://yt3.ggpht.com/a/AATXAJyku3_rN_fbSTbMRWHTnWf2p-iDkfr_CXfvs0E-=s900-c-k-c0xffffffff-no-rj-mo" group-title="(no group)",EDGEsport
+https://edgesport-samsunguk.amagi.tv/playlist.m3u8
+#EXTINF:-1 tvg-id="EuronewsEnglish.fr" tvg-name="Euronews English" tvg-logo="https://tvpnlogopeu.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/ATBA1000004XC_20230222T012142SQUARE.png_20230222012142.png" group-title="(no group)",Euronews English
+https://62d77612985e4978b5cec13c47c897b5.mediatailor.us-east-1.amazonaws.com/v1/master/44f73ba4d03e9607dcd9bebdcb8494d86964f1d8/Samsung-gb_EuroNewsLive-1/playlist.m3u8
+#EXTINF:-1 tvg-id="FashionTelevision.uk" tvg-name="Fashion TV   [Not 24/7]" tvg-logo="https://tvpnlogopeu.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/ATBA10000075C_20220323T072552SQUARE.png_20220323072555.png" group-title="(no group)",Fashion TV   [Not 24/7]
+https://fashiontv-fashiontv-1-gb.samsung.wurl.tv/manifest/playlist.m3u8
+#EXTINF:-1 tvg-id="(no tvg-id)" tvg-name="Gusto TV" tvg-logo="https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/CABB2500021YQ_20241022T004852SQUARE.png" group-title="(no group)",Gusto TV
+https://gustotv-samsung-gb.samsung.wurl.tv/manifest/playlist.m3u8
+#EXTINF:-1 tvg-id="HorseCountryTV.uk" tvg-name="Horse and Country" tvg-logo="https://yt3.googleusercontent.com/ytc/AIdro_kz4iEAz3gaVsOjPQYjGd_fR1bJWJraid9bE7_fYDuncA0=s900-c-k-c0x00ffffff-no-rj" group-title="(no group)",Horse and Country
+https://hncfree-samsung-uk.amagi.tv/playlist.m3u8
+#EXTINF:-1 tvg-id="InsightTV.nl" tvg-name="Insight TV" tvg-logo="https://image.winudf.com/v2/image/Y29tLm5ldWxpb24uY2VhcHAudGVybl9pY29uXzE1MjExNDU3MDdfMDg5/icon.png?w=140&fakeurl=1" group-title="(no group)",Insight TV
+https://insighttv-samsung-uk.amagi.tv/playlist.m3u8
+#EXTINF:-1 tvg-id="(no tvg-id)" tvg-name="InWild" tvg-logo="https://tvpnlogopeu.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/GBBA220000751_20230125T022345SQUARE.png_20230125022346.png" group-title="(no group)",InWild
+https://inwild-samsung-uk.amagi.tv/playlist.m3u8
+#EXTINF:-1 tvg-id="InWonder.nl" tvg-name="InWonder" tvg-logo="https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/INBA4900005PV_20230308T013505SQUARE.png_20230308013506.png" group-title="(no group)",InWonder
+https://inwonder-samsung-uk.amagi.tv/playlist.m3u8
+#EXTINF:-1 tvg-id="MovieSphere.us" tvg-name="MovieSphere" tvg-logo="https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/USBD17000117B_20241105T024212SQUARE.png" group-title="(no group)",MovieSphere
+https://moviesphereuk-samsunguk.amagi.tv/playlist.m3u8
+#EXTINF:-1 tvg-id="PBSAmerica.uk" tvg-name="PBS America" tvg-logo="https://play-lh.googleusercontent.com/sdqplC_NukxQMXLdlSzvsG68nhXunq8hV8DbmD81DDTldAXX33l9Y9EUt7iPp2OKAg" group-title="(no group)",PBS America
+https://pbs-samsunguk.amagi.tv/playlist.m3u8
+#EXTINF:-1 tvg-id="QelloConcertsbyStingray.ca" tvg-name="Qello Concerts by Stingray" tvg-logo="https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/USBD3500024YB_20240826T191207SQUARE.png" group-title="(no group)",Qello Concerts by Stingray
+https://d2gjhy8g9ziabr.cloudfront.net/v1/master/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-samsungtvplus-stitched/samsungtvplus_uk_stingrayqello_001.m3u8
+#EXTINF:-1 tvg-id="QwestTVJazzBeyond.fr" tvg-name="Qwest TV Jazz & Beyond" tvg-logo="https://upload.wikimedia.org/wikipedia/fr/d/d6/Qwest_TV_Logo.jpg" group-title="(no group)",Qwest TV Jazz & Beyond
+https://cdn-ue1-prod.tsv2.amagi.tv/linear/qwestAAAA-qwestjazz-uk-samsungtv/playlist.m3u8
+#EXTINF:-1 tvg-id="QwestTVMix.fr" tvg-name="Qwest TV Mix" tvg-logo="https://yt3.ggpht.com/a/AATXAJxuDQe6ADNPrE2TB8T5UIwHUJ9eQnfTphA4yoe8iw=s900-c-k-c0xffffffff-no-rj-mo" group-title="(no group)",Qwest TV Mix
+https://cdn-ue1-prod.tsv2.amagi.tv/linear/qwestAAAA-qwestmix-uk-samsungtv/playlist.m3u8
+#EXTINF:-1 tvg-id="RealStories.uk" tvg-name="Real Stories" tvg-logo="https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/INBA4900009BL_20220824T022303SQUARE.png_20220824022303.png" group-title="(no group)",Real Stories
+https://realstories-samsung-uk.amagi.tv/playlist.m3u8
+#EXTINF:-1 tvg-id="SofyTV.ch" tvg-name="Sofy TV" tvg-logo="https://play-lh.googleusercontent.com/cydJ_dpAEBwVtNhckpFpMZXwxCKJrkM2dFjOQpd8r8obXMvaMnIVEYNo3aGrjdJ86xk" group-title="(no group)",Sofy TV
+https://sofytv-samsunguk.amagi.tv/playlist.m3u8
+#EXTINF:-1 tvg-id="Teletubbies.uk" tvg-name="Teletubbies" tvg-logo="https://tvpnlogopeu.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/ATBA33000151A_20220323T073449SQUARE.png_20220323073452.png" group-title="(no group)",Teletubbies
+https://dhx-teletubbies-1-gb.samsung.wurl.tv/playlist.m3u8
+#EXTINF:-1 tvg-id="TennisChannel.us" tvg-name="Tennis Channel" tvg-logo="https://tvpnlogopeu.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/ATBA2200008XN_20240911T162540SQUARE.png" group-title="(no group)",Tennis Channel
+https://tennischannel-int-samsunguk.amagi.tv/playlist.m3u8
+#EXTINF:-1 tvg-id="TheGuardian.uk" tvg-name="The Guardian" tvg-logo="https://tvpnlogopeu.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/GBAJ2400003DD_20220323T071326SQUARE.png_20220323071329.png" group-title="(no group)",The Guardian
+https://0d0239e437124ddcb8090d815caf4013.mediatailor.us-east-1.amazonaws.com/v1/master/04fd913bb278d8775298c26fdca9d9841f37601f/Samsung-gb_TheGuardianChannel/playlist.m3u8
+#EXTINF:-1 tvg-id="Wonder.uk" tvg-name="Wonder" tvg-logo="https://tvpnlogopeu.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/GBBA22000063W_20230426T015615SQUARE.png_20230426015616.png" group-title="(no group)",Wonder
+https://wonder-samsung-uk.amagi.tv/playlist.m3u8
