@@ -92,6 +92,258 @@ settings.createDivider('');
 settings.createBool('adultContent', 'Display Adult Content (18+)', false, function(v) {
     service.adultContent = v;
 });
+/*settings.createMultiOpt('regionOverride', 'Region Override (Debug - No Pluto)', [
+    ['off', 'Off', true],
+    ['gb', 'United Kingdom'],
+    ['us', 'United States'],
+    ['af', 'Afghanistan'],
+    ['al', 'Albania'],
+    ['dz', 'Algeria'],
+    ['as', 'American Samoa'],
+    ['ad', 'Andorra'],
+    ['ao', 'Angola'],
+    ['ai', 'Anguilla'],
+    ['aq', 'Antarctica'],
+    ['ag', 'Antigua and Barbuda'],
+    ['ar', 'Argentina'],
+    ['am', 'Armenia'],
+    ['aw', 'Aruba'],
+    ['au', 'Australia'],
+    ['at', 'Austria'],
+    ['az', 'Azerbaijan'],
+    ['bs', 'Bahamas'],
+    ['bh', 'Bahrain'],
+    ['bd', 'Bangladesh'],
+    ['bb', 'Barbados'],
+    ['by', 'Belarus'],
+    ['be', 'Belgium'],
+    ['bz', 'Belize'],
+    ['bj', 'Benin'],
+    ['bm', 'Bermuda'],
+    ['bt', 'Bhutan'],
+    ['bo', 'Bolivia'],
+    ['bq', 'Bonaire, Sint Eustatius and Saba'],
+    ['ba', 'Bosnia and Herzegovina'],
+    ['bw', 'Botswana'],
+    ['bv', 'Bouvet Island'],
+    ['br', 'Brazil'],
+    ['io', 'British Indian Ocean Territory'],
+    ['bn', 'Brunei Darussalam'],
+    ['bg', 'Bulgaria'],
+    ['bf', 'Burkina Faso'],
+    ['bi', 'Burundi'],
+    ['cv', 'Cabo Verde'],
+    ['kh', 'Cambodia'],
+    ['cm', 'Cameroon'],
+    ['ca', 'Canada'],
+    ['ky', 'Cayman Islands'],
+    ['cf', 'Central African Republic'],
+    ['td', 'Chad'],
+    ['cl', 'Chile'],
+    ['cn', 'China'],
+    ['cx', 'Christmas Island'],
+    ['cc', 'Cocos (Keeling) Islands'],
+    ['co', 'Colombia'],
+    ['km', 'Comoros'],
+    ['cd', 'Congo (Democratic Republic of the)'],
+    ['cg', 'Congo'],
+    ['ck', 'Cook Islands'],
+    ['cr', 'Costa Rica'],
+    ['ci', 'Côte d\'Ivoire'],
+    ['hr', 'Croatia'],
+    ['cu', 'Cuba'],
+    ['cw', 'Curaçao'],
+    ['cy', 'Cyprus'],
+    ['cz', 'Czechia'],
+    ['dk', 'Denmark'],
+    ['dj', 'Djibouti'],
+    ['dm', 'Dominica'],
+    ['do', 'Dominican Republic'],
+    ['ec', 'Ecuador'],
+    ['eg', 'Egypt'],
+    ['sv', 'El Salvador'],
+    ['gq', 'Equatorial Guinea'],
+    ['er', 'Eritrea'],
+    ['ee', 'Estonia'],
+    ['sz', 'Eswatini'],
+    ['et', 'Ethiopia'],
+    ['fk', 'Falkland Islands'],
+    ['fo', 'Faroe Islands'],
+    ['fj', 'Fiji'],
+    ['fi', 'Finland'],
+    ['fr', 'France'],
+    ['gf', 'French Guiana'],
+    ['pf', 'French Polynesia'],
+    ['tf', 'French Southern Territories'],
+    ['ga', 'Gabon'],
+    ['gm', 'Gambia'],
+    ['ge', 'Georgia'],
+    ['de', 'Germany'],
+    ['gh', 'Ghana'],
+    ['gi', 'Gibraltar'],
+    ['gr', 'Greece'],
+    ['gl', 'Greenland'],
+    ['gd', 'Grenada'],
+    ['gp', 'Guadeloupe'],
+    ['gu', 'Guam'],
+    ['gt', 'Guatemala'],
+    ['gg', 'Guernsey'],
+    ['gn', 'Guinea'],
+    ['gw', 'Guinea-Bissau'],
+    ['gy', 'Guyana'],
+    ['ht', 'Haiti'],
+    ['hm', 'Heard Island and McDonald Islands'],
+    ['va', 'Holy See'],
+    ['hn', 'Honduras'],
+    ['hk', 'Hong Kong'],
+    ['hu', 'Hungary'],
+    ['is', 'Iceland'],
+    ['in', 'India'],
+    ['id', 'Indonesia'],
+    ['ir', 'Iran'],
+    ['iq', 'Iraq'],
+    ['ie', 'Ireland'],
+    ['im', 'Isle of Man'],
+    ['il', 'Israel'],
+    ['it', 'Italy'],
+    ['jm', 'Jamaica'],
+    ['jp', 'Japan'],
+    ['je', 'Jersey'],
+    ['jo', 'Jordan'],
+    ['kz', 'Kazakhstan'],
+    ['ke', 'Kenya'],
+    ['ki', 'Kiribati'],
+    ['kp', 'Korea (Democratic People\'s Republic of)'],
+    ['kr', 'Korea'],
+    ['kw', 'Kuwait'],
+    ['kg', 'Kyrgyzstan'],
+    ['la', 'Lao'],
+    ['lv', 'Latvia'],
+    ['lb', 'Lebanon'],
+    ['ls', 'Lesotho'],
+    ['lr', 'Liberia'],
+    ['ly', 'Libya'],
+    ['li', 'Liechtenstein'],
+    ['lt', 'Lithuania'],
+    ['lu', 'Luxembourg'],
+    ['mo', 'Macao'],
+    ['mg', 'Madagascar'],
+    ['mw', 'Malawi'],
+    ['my', 'Malaysia'],
+    ['mv', 'Maldives'],
+    ['ml', 'Mali'],
+    ['mt', 'Malta'],
+    ['mh', 'Marshall Islands'],
+    ['mq', 'Martinique'],
+    ['mr', 'Mauritania'],
+    ['mu', 'Mauritius'],
+    ['yt', 'Mayotte'],
+    ['mx', 'Mexico'],
+    ['fm', 'Micronesia'],
+    ['md', 'Moldova'],
+    ['mc', 'Monaco'],
+    ['mn', 'Mongolia'],
+    ['me', 'Montenegro'],
+    ['ms', 'Montserrat'],
+    ['ma', 'Morocco'],
+    ['mz', 'Mozambique'],
+    ['mm', 'Myanmar'],
+    ['na', 'Namibia'],
+    ['nr', 'Nauru'],
+    ['np', 'Nepal'],
+    ['nl', 'Netherlands'],
+    ['nc', 'New Caledonia'],
+    ['nz', 'New Zealand'],
+    ['ni', 'Nicaragua'],
+    ['ne', 'Niger'],
+    ['ng', 'Nigeria'],
+    ['nu', 'Niue'],
+    ['nf', 'Norfolk Island'],
+    ['mp', 'Northern Mariana Islands'],
+    ['no', 'Norway'],
+    ['om', 'Oman'],
+    ['pk', 'Pakistan'],
+    ['pw', 'Palau'],
+    ['ps', 'Palestine'],
+    ['pa', 'Panama'],
+    ['pg', 'Papua New Guinea'],
+    ['py', 'Paraguay'],
+    ['pe', 'Peru'],
+    ['ph', 'Philippines'],
+    ['pn', 'Pitcairn'],
+    ['pl', 'Poland'],
+    ['pt', 'Portugal'],
+    ['pr', 'Puerto Rico'],
+    ['qa', 'Qatar'],
+    ['mk', 'Republic of North Macedonia'],
+    ['ro', 'Romania'],
+    ['ru', 'Russian Federation'],
+    ['rw', 'Rwanda'],
+    ['re', 'Réunion'],
+    ['bl', 'Saint Barthélemy'],
+    ['sh', 'Saint Helena, Ascension and Tristan da Cunha'],
+    ['kn', 'Saint Kitts and Nevis'],
+    ['lc', 'Saint Lucia'],
+    ['mf', 'Saint Martin (French part)'],
+    ['pm', 'Saint Pierre and Miquelon'],
+    ['vc', 'Saint Vincent and the Grenadines'],
+    ['ws', 'Samoa'],
+    ['sm', 'San Marino'],
+    ['st', 'Sao Tome and Principe'],
+    ['sa', 'Saudi Arabia'],
+    ['sn', 'Senegal'],
+    ['rs', 'Serbia'],
+    ['sc', 'Seychelles'],
+    ['sl', 'Sierra Leone'],
+    ['sg', 'Singapore'],
+    ['sx', 'Sint Maarten (Dutch part)'],
+    ['sk', 'Slovakia'],
+    ['si', 'Slovenia'],
+    ['sb', 'Solomon Islands'],
+    ['so', 'Somalia'],
+    ['za', 'South Africa'],
+    ['gs', 'South Georgia and the South Sandwich Islands'],
+    ['ss', 'South Sudan'],
+    ['es', 'Spain'],
+    ['lk', 'Sri Lanka'],
+    ['sd', 'Sudan'],
+    ['sr', 'Suriname'],
+    ['sj', 'Svalbard and Jan Mayen'],
+    ['se', 'Sweden'],
+    ['ch', 'Switzerland'],
+    ['sy', 'Syrian Arab Republic'],
+    ['tw', 'Taiwan'],
+    ['tj', 'Tajikistan'],
+    ['tz', 'Tanzania'],
+    ['th', 'Thailand'],
+    ['tl', 'Timor-Leste'],
+    ['tg', 'Togo'],
+    ['tk', 'Tokelau'],
+    ['to', 'Tonga'],
+    ['tt', 'Trinidad and Tobago'],
+    ['tn', 'Tunisia'],
+    ['tr', 'Turkey'],
+    ['tm', 'Turkmenistan'],
+    ['tc', 'Turks and Caicos Islands'],
+    ['tv', 'Tuvalu'],
+    ['ug', 'Uganda'],
+    ['ua', 'Ukraine'],
+    ['ae', 'United Arab Emirates'],
+    ['uy', 'Uruguay'],
+    ['uz', 'Uzbekistan'],
+    ['vu', 'Vanuatu'],
+    ['ve', 'Venezuela'],
+    ['vn', 'Viet Nam'],
+    ['vg', 'Virgin Islands (British)'],
+    ['vi', 'Virgin Islands (U.S.)'],
+    ['wf', 'Wallis and Futuna'],
+    ['eh', 'Western Sahara'],
+    ['ye', 'Yemen'],
+    ['zm', 'Zambia'],
+    ['zw', 'Zimbabwe']
+  ], function(v) {
+  service.regionOverride = v;
+});
 
 /*|---------------------------------------------------------------------------------------- Establish Global Functions ----------------------------------------------------------------------------------------|*/
 
@@ -380,93 +632,197 @@ function iprotM3UParser(page, pl, specifiedGroup, limit, query) {  // by iprot -
 function scrapeSamsung(page, limit, query) {
     console.log("Starting Samsung TV Plus channel fetch...");
     page.metadata.title = "Detecting Region, please wait...";
-    var userRegion = getUserLocation();
-    if (!userRegion) {
-      console.log("Region not found, displaying custom icon");
-      page.appendItem(null, "video", {
-        'icon': plugin.path + 'images/regionerror.png'
-      });
-      return;
+
+    var userRegion;
+
+    // Check for region override
+    if (service.regionOverride && service.regionOverride !== "off") {
+        console.log("Using region override: " + service.regionOverride);
+        userRegion = service.regionOverride;
+    } else {
+        console.log("No region override, detecting region...");
+        userRegion = getUserLocation();
     }
+
+    // If no region is found
+    if (!userRegion) {
+        console.log("Region not found, displaying custom icon");
+        page.appendItem(null, "video", {
+            'icon': plugin.path + "images/regionerror.png"
+        });
+        return;
+    }
+
     console.log("User's detected region: " + userRegion);
+
+    // Fetch the Samsung TV JSON data
     var response = http.request("https://raw.githubusercontent.com/F0R3V3R50F7/m7-plugin-streamian/refs/heads/main/playlists/samtv.json", {
+        method: "GET",
+        headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36",
+            "Accept": "application/json",
+            "Connection": "keep-alive"
+        }
+    });
+
+    if (response) {
+        // Decode the JSON data
+        var allRegions = showtime.JSONDecode(response.toString()).regions;
+        if (!allRegions[userRegion]) {
+            console.log("Region not found in Samsung data, displaying custom icon");
+            page.appendItem(null, "video", {
+                'icon': plugin.path + "images/regionerror.png"
+            });
+            return;
+        }
+
+        var channels = allRegions[userRegion].channels;
+        var groupedChannels = {};
+
+        for (var key in channels) {
+            if (channels.hasOwnProperty(key)) {
+                var channel = channels[key];
+                var genre = channel.group;
+                var channelId = key; // Extract ID from the channel key
+                var channelUrl = "https://jmp2.uk/sam-" + channelId + ".m3u8";
+
+                // Skip channels without a valid URL or with DRM
+                if (!channelId || !channelUrl || channel.license_url) {
+                    continue;
+                }
+
+                // Filter channels by query if provided
+                if (query && channel.name.toLowerCase().indexOf(query.toLowerCase()) === -1) {
+                    continue;
+                }
+
+                if (!groupedChannels[genre]) {
+                    groupedChannels[genre] = [];
+                }
+
+                groupedChannels[genre].push({
+                    id: channelId,
+                    name: channel.name,
+                    logo: channel.logo,
+                    url: channelUrl
+                });
+            }
+        }
+
+        // Display channels
+        page.metadata.title = "Loading Channels, please wait...";
+        var globalCount = 0;
+        for (var genre in groupedChannels) {
+            if (groupedChannels.hasOwnProperty(genre)) {
+                if (!limit) {
+                    page.appendItem(null, "separator", { title: "" });
+                    page.appendItem(null, "separator", { title: genre });
+                    page.appendItem(null, "separator", { title: "" });
+                }
+
+                var channelsInGenre = groupedChannels[genre];
+                for (var i = 0; i < channelsInGenre.length; i++) {
+                    if (limit && globalCount >= limit) {
+                        break;
+                    }
+
+                    addChannel(
+                        page,
+                        channelsInGenre[i].url,
+                        channelsInGenre[i].name,
+                        channelsInGenre[i].logo
+                    );
+                    globalCount++;
+                }
+
+                if (limit && globalCount >= limit) {
+                    break;
+                }
+            }
+        }
+    } else {
+        console.log("Error fetching Samsung TV Plus channels.");
+    }
+}
+
+function scrapePluto(page, limit, query) {
+    console.log("Starting channel fetch...");
+    var response = http.request("http://api.pluto.tv/v2/channels", {
       'method': "GET",
       'headers': {
         'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36",
-        'Accept': 'application/json',
+        'Accept': "application/json",
         'Connection': 'keep-alive'
       }
     });
     if (!!response) {
-      var allChannels = showtime.JSONDecode(response.toString()).regions;
-      var channels = {};
-      if (allChannels[userRegion]) {
-        channels = allChannels[userRegion].channels;
-      } else {
-        console.log("Region not found in Samsung data, displaying custom icon");
-        page.appendItem('', 'video', {
-          'icon': plugin.path + 'images/regionerror.png'
-        });
-        return;
-      }
+      var channelsData = showtime.JSONDecode(response.toString());
       var groupedChannels = {};
-      for (var key in channels) {
-        if (channels.hasOwnProperty(key)) {
-          var channel = channels[key];
-          var genre = channel.group;
-          var url = channel.url;
-          if (!url || channel.license_url) {
-            continue;
-          }
-          if (!groupedChannels[genre]) {
-            groupedChannels[genre] = [];
-          }
-          groupedChannels[genre].push({
-            'id': key,
-            'name': channel.name,
-            'logo': channel.logo,
-            'url': url
-          });
-        }
+      function generateUniqueId() {
+        var _0x491762 = new Date().getTime();
+        var _0x354ad1 = Math.floor(Math.random() * 0xf4240).toString(0x10);
+        return _0x491762.toString(0x10) + '-' + _0x354ad1;
       }
+      var deviceId = generateUniqueId();
+      var sid = generateUniqueId();
+      for (var i = 0x0; i < channelsData.length; i++) {
+        var channel = channelsData[i];
+        var genre = channel.category;
+        var baseUrl = channel.stitched.urls[0x0].url.split('?')[0x0];
+        var logo = channel.colorLogoPNG.path;
+        var name = channel.name;
+        if (name === "How To Use Pluto TV") {
+          continue;
+        }
+        if (genre === "Samsung") {
+          continue;
+        }
+        var dynamicParams = "?appName=web&appVersion=unknown&clientTime=0&deviceDNT=0&deviceId=" + deviceId + "&deviceMake=Chrome&deviceModel=web&deviceType=web&deviceVersion=unknown&includeExtendedEvents=false&serverSideAds=true&sid=" + sid;
+        var finalUrl = baseUrl + dynamicParams;
+        if (!groupedChannels[genre]) {
+          groupedChannels[genre] = [];
+        }
+        groupedChannels[genre].push({
+          'name': name,
+          'url': finalUrl,
+          'logo': logo
+        });
+      }
+      var totalCount = 0x0;
       page.metadata.title = "Loading Channels, please wait...";
-      var globalCount = 0x0;
       for (var genre in groupedChannels) {
         if (groupedChannels.hasOwnProperty(genre)) {
           if (!limit) {
             page.appendItem(null, "separator", {
               'title': ''
             });
-            page.appendItem(null, 'separator', {
+            page.appendItem(null, "separator", {
               'title': genre
             });
             page.appendItem(null, "separator", {
               'title': ''
             });
           }
-          var channelsInGenre = groupedChannels[genre];
-          for (var j = 0x0; j < channelsInGenre.length; j++) {
-            if (limit && globalCount >= limit) {
+          var channels = groupedChannels[genre];
+          for (var j = 0x0; j < channels.length; j++) {
+            if (limit && totalCount >= limit) {
               break;
             }
-            if (query && channelsInGenre[j].name.toLowerCase().indexOf(query.toLowerCase()) === -0x1) {
+            if (query && channels[j].name.toLowerCase().indexOf(query.toLowerCase()) === -0x1) {
               continue;
             }
-            addChannel(page, channelsInGenre[j].url, channelsInGenre[j].name, channelsInGenre[j].logo);
-            globalCount++;
+            addChannel(page, channels[j].url, channels[j].name, channels[j].logo);
+            totalCount++;
           }
-          if (limit && globalCount >= limit) {
+          if (limit && totalCount >= limit) {
             break;
           }
         }
       }
+      if (totalCount === 0x0) {}
     } else {
-      console.log("Error fetching Samsung TV Plus channels.");
+      console.log("Error fetching channels.");
     }
-}
-
-function scrapePluto(page, limit, query) {
-    function _0x28f3(_0x4c1fea,_0x5691c4){var _0x31f997=_0x31f9();return _0x28f3=function(_0x28f38c,_0x23c0f8){_0x28f38c=_0x28f38c-0x17d;var _0x113419=_0x31f997[_0x28f38c];return _0x113419;},_0x28f3(_0x4c1fea,_0x5691c4);}var _0x348ca6=_0x28f3;function _0x31f9(){var _0x4ec5fe=['title','path','?appName=web&appVersion=unknown&clientTime=0&deviceDNT=0&deviceId=','toString','log','http://api.pluto.tv/v2/channels','urls','&deviceMake=Chrome&deviceModel=web&deviceType=web&deviceVersion=unknown&includeExtendedEvents=false&serverSideAds=true&sid=','4285iVFKqz','random','3066EAscen','Mozilla/5.0\x20(Windows\x20NT\x2010.0;\x20Win64;\x20x64)\x20AppleWebKit/537.36\x20(KHTML,\x20like\x20Gecko)\x20Chrome/85.0.4183.102\x20Safari/537.36','4826120cJUfKP','855163qjPkLr','6392995XgpQgW','application/json','separator','request','length','name','category','2nLsZmV','11TtvRjE','logo','3IjnKxP','indexOf','floor','JSONDecode','8493228UUAYUL','hasOwnProperty','colorLogoPNG','2874824RlHGWP','How\x20To\x20Use\x20Pluto\x20TV','appendItem','8hNRnJe','Samsung','GET','12989676NxVbko','url'];_0x31f9=function(){return _0x4ec5fe;};return _0x31f9();}(function(_0x360a7d,_0x36393e){var _0x289896=_0x28f3,_0x2203a8=_0x360a7d();while(!![]){try{var _0x1921df=-parseInt(_0x289896(0x18f))/0x1*(-parseInt(_0x289896(0x197))/0x2)+parseInt(_0x289896(0x19a))/0x3*(parseInt(_0x289896(0x1a1))/0x4)+-parseInt(_0x289896(0x18a))/0x5*(-parseInt(_0x289896(0x18c))/0x6)+-parseInt(_0x289896(0x190))/0x7+-parseInt(_0x289896(0x17d))/0x8*(-parseInt(_0x289896(0x19e))/0x9)+-parseInt(_0x289896(0x18e))/0xa+-parseInt(_0x289896(0x198))/0xb*(parseInt(_0x289896(0x180))/0xc);if(_0x1921df===_0x36393e)break;else _0x2203a8['push'](_0x2203a8['shift']());}catch(_0x92f7e8){_0x2203a8['push'](_0x2203a8['shift']());}}}(_0x31f9,0x747be));var CHANNELS_URL=_0x348ca6(0x187);console[_0x348ca6(0x186)]('Starting\x20channel\x20fetch...');var response=http[_0x348ca6(0x193)](CHANNELS_URL,{'method':_0x348ca6(0x17f),'headers':{'User-Agent':_0x348ca6(0x18d),'Accept':_0x348ca6(0x191),'Connection':'keep-alive'}});if(!!response){var channelsData=showtime[_0x348ca6(0x19d)](response[_0x348ca6(0x185)]()),groupedChannels={};function generateUniqueId(){var _0x11ee61=_0x348ca6,_0x491762=new Date()['getTime'](),_0x354ad1=Math[_0x11ee61(0x19c)](Math[_0x11ee61(0x18b)]()*0xf4240)[_0x11ee61(0x185)](0x10);return _0x491762[_0x11ee61(0x185)](0x10)+'-'+_0x354ad1;}var deviceId=generateUniqueId(),sid=generateUniqueId();for(var i=0x0;i<channelsData['length'];i++){var channel=channelsData[i],genre=channel[_0x348ca6(0x196)],baseUrl=channel['stitched'][_0x348ca6(0x188)][0x0]['url']['split']('?')[0x0],logo=channel[_0x348ca6(0x1a0)][_0x348ca6(0x183)],name=channel[_0x348ca6(0x195)];if(name===_0x348ca6(0x1a2))continue;if(genre===_0x348ca6(0x17e))continue;var dynamicParams=_0x348ca6(0x184)+deviceId+_0x348ca6(0x189)+sid,finalUrl=baseUrl+dynamicParams;!groupedChannels[genre]&&(groupedChannels[genre]=[]),groupedChannels[genre]['push']({'name':name,'url':finalUrl,'logo':logo});}var totalCount=0x0;page['metadata'][_0x348ca6(0x182)]='Loading\x20Channels,\x20please\x20wait...';for(var genre in groupedChannels){if(groupedChannels[_0x348ca6(0x19f)](genre)){!limit&&(page[_0x348ca6(0x1a3)](null,_0x348ca6(0x192),{'title':''}),page['appendItem'](null,_0x348ca6(0x192),{'title':genre}),page[_0x348ca6(0x1a3)](null,_0x348ca6(0x192),{'title':''}));var channels=groupedChannels[genre];for(var j=0x0;j<channels[_0x348ca6(0x194)];j++){if(limit&&totalCount>=limit)break;if(query&&channels[j]['name']['toLowerCase']()[_0x348ca6(0x19b)](query['toLowerCase']())===-0x1)continue;addChannel(page,channels[j][_0x348ca6(0x181)],channels[j][_0x348ca6(0x195)],channels[j][_0x348ca6(0x199)]),totalCount++;}if(limit&&totalCount>=limit)break;}}if(totalCount===0x0){}}else console[_0x348ca6(0x186)]('Error\x20fetching\x20channels.');
 }
 
 function addChannels(page, items, specifiedGroup, limit) {
