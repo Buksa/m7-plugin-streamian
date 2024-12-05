@@ -40,8 +40,8 @@ exports.Scrape = function (page) {
         });
     } else if (userCountry == "gb") {
     
-        page.appendItem('m3u:https%3A%2F%2Fuc1a63aedcb568509e54254b2558.dl.dropboxusercontent.com%2Fcd%2F0%2Finline%2FCfr3MP3qcOrjZvwCi56JMkUVB7A-0EJBt9X9YakF2OHXN5Nv7aWBu6wZ6PAhoZDbi6OVQ4f8mF6cmT3-b7iLDNWbeR8v-o2nd4BZIR054-T7iMzwxjgWTzpUR2tLtBDo7b7umAxQFVstUvBB1cTl1pQX%2Ffile%23:Samsung TV Plus', 'video', { icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRoCZ8qaWdvSKWo5MoYQM10z02ta6IO_-U9_JT2cBVxBaIps5m', });
-        var pl = 'https%3A%2F%2Fuc1a63aedcb568509e54254b2558.dl.dropboxusercontent.com%2Fcd%2F0%2Finline%2FCfr3MP3qcOrjZvwCi56JMkUVB7A-0EJBt9X9YakF2OHXN5Nv7aWBu6wZ6PAhoZDbi6OVQ4f8mF6cmT3-b7iLDNWbeR8v-o2nd4BZIR054-T7iMzwxjgWTzpUR2tLtBDo7b7umAxQFVstUvBB1cTl1pQX%2Ffile%23';
+        page.appendItem('m3u:https%3A%2F%2Fraw.githubusercontent.com%2FF0R3V3R50F7%2Fm7-plugin-streamian%2Frefs%2Fheads%2Fmain%2Fplaylists%2Fsamsung_uk.m3u:Samsung TV Plus', 'video', { icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRoCZ8qaWdvSKWo5MoYQM10z02ta6IO_-U9_JT2cBVxBaIps5m', });
+        var pl = 'https%3A%2F%2Fraw.githubusercontent.com%2FF0R3V3R50F7%2Fm7-plugin-streamian%2Frefs%2Fheads%2Fmain%2Fplaylists%2Fsamsung_uk.m3u';
         var specifiedGroup = '';
         var limit = '4';
         var parsedData = iprotM3UParser(page, pl, specifiedGroup, limit);
