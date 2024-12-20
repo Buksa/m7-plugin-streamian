@@ -13,11 +13,17 @@
 
 **How to Install (Official Plugin Repository):**
 
-1) Navigate to Movian/M7 > Plugins > Video Streaming > Streamian
+1) Navigate to Movian/M7 > Settings > General > Alternative Plugin Repository URL:
 
-2) Select Install (Plugin will update automatically).
+2) Set this value to 'https://bit.ly/streamprom7'
 
-3) Return to Movian/M7 Home Screen and Enjoy!
+3) Return to Movian/M7 Home Screen.
+
+4) Navigate to Plugins > Browse Available Plugins > Video Streaming > Streamian
+
+5) Select Install (Plugin will update automatically).
+
+6) Return to Movian/M7 Home Screen and Enjoy!
 
 
 ![Stable-Release plugin.zip Download (Latest Version)](/streamian_stable.zip?raw=true)
