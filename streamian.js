@@ -1498,6 +1498,8 @@ new page.Route(plugin.id + ":play:(.*):(.*):(.*)", function(page, query, imdbid,
     query = sanitized.replace(/\s+/g, " ").trim();
     popup.notify('Streamian | Encountering issues? Please report to Reddit r/movian', 10);
     stream.Scout(page, query, imdbid);
+    page.loading = false;
+    setPageHeader(page, 'No suitable streams found for ' + query);
 });
 
 new page.Route(plugin.id + ":channels", function(page) {

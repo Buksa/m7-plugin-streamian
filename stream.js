@@ -159,8 +159,7 @@ exports.Scout = function (page, title, imdbid) {
                 page.loading = false;
                 page.redirect(vparams);
             } else {
-                setPageHeader(page, 'No suitable streams found for ' + title);
-                page.loading = false;
+                return [];
             }
 
             cleanup();
@@ -169,7 +168,7 @@ exports.Scout = function (page, title, imdbid) {
         processResults();
 
     } catch (e) {
-        showtime.print('Error: ' + e);
+        //showtime.print('Error: ' + e);
         cleanup();
     }
 };
