@@ -913,8 +913,42 @@ new page.Route(plugin.id + ":start", function(page) {
         });
 
         // Select exactly 2 items from the top and 2 items from the bottom
-        var topItems = ondemandhistoryList.slice(0, 2);  // Select first 2 items
-        var bottomItems = ondemandhistoryList.slice(-2); // Select last 2 items
+        // Generate a seed based on the current timestamp for pseudo-random selection
+        var seed = new Date().getTime() % 100000;
+
+        // Helper function for pseudo-random number generation
+        function pseudoRandom(seed) {
+            seed = (seed * 9301 + 49297) % 233280; // Linear congruential generator
+            return seed / 233280.0;
+        }
+
+        // Helper function to pick 2 random items from a list
+        function pickRandomItems(list, count, seed) {
+            var result = [];
+            var usedIndexes = {};
+            for (var i = 0; i < count && i < list.length; i++) {
+                var randomIndex;
+                do {
+                    randomIndex = ~~(pseudoRandom(seed++) * list.length);
+                } while (usedIndexes[randomIndex]);
+                usedIndexes[randomIndex] = true;
+                result.push(list[randomIndex]);
+            }
+            return result;
+        }
+
+        // Split the list into older and newer halves
+        var middleIndex = ~~(ondemandhistoryList.length / 2); // Truncate without Math.floor
+        var olderItems = ondemandhistoryList.slice(0, middleIndex);
+        var newerItems = ondemandhistoryList.slice(middleIndex);
+
+        // Select 2 random items from each half
+        var topItems = pickRandomItems(olderItems, 2, seed);
+        var bottomItems = pickRandomItems(newerItems, 2, seed + 1);
+
+        // Combine the selected items
+        var selectedItems = topItems.concat(bottomItems);
+
 
         selectedItems = topItems.concat(bottomItems);  // Combine top and bottom items
 
@@ -1474,7 +1508,7 @@ new page.Route(plugin.id + ":details:(.*):(.*)", function(page, query, type) {
 });
 
 new page.Route(plugin.id + ":play:(.*):(.*):(.*)", function(page, query, imdbid, type) {
-    setPageHeader(page, "Searching for best source, please wait..");
+    setPageHeader(page, "Loading Addons, please wait..");
     cancelCurrentOperation();
     addtoOnDemandHistory(query, type);
     var sanitized = query;

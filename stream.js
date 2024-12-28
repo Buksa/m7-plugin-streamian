@@ -60,9 +60,11 @@ exports.Scout = function (page, title, imdbid) {
             if (/360p|hq|ld|webrip|webdl/i.test(magnetLink)) return "360p";
         }
 
-
         scrapers.forEach(function (scraper) {
             if (scraper && scraper.scraperFunction) {
+                // Update page metadata title for the current scraper
+                page.metadata.title = 'Searching ' + scraper.name + ', please wait...';
+
                 var results = scraper.scraperFunction(page, title);
                 checkCancellation();
 
@@ -85,6 +87,9 @@ exports.Scout = function (page, title, imdbid) {
         });
 
         checkCancellation();
+
+        // Update metadata title for analyzing video quality
+        page.metadata.title = "Analyzing video quality, please wait...";
 
         function selectBestResult(preferredRegex, fallbackRegex) {
             var filtered = combinedResults.filter(function (item) {
@@ -159,6 +164,7 @@ exports.Scout = function (page, title, imdbid) {
                 page.loading = false;
                 page.redirect(vparams);
             } else {
+                page.loading = false;
                 return [];
             }
 
@@ -168,7 +174,6 @@ exports.Scout = function (page, title, imdbid) {
         processResults();
 
     } catch (e) {
-        //showtime.print('Error: ' + e);
         cleanup();
     }
 };
