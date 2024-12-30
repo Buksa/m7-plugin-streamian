@@ -55,7 +55,7 @@ exports.Scout = function (page, title, imdbid) {
             // Skip H265 codecs, as they're unsupported
             if (service.H265Filter && /x265|h265/i.test(codec)) return null;
             // 4K / Ultra HD definitions
-            if (/2160p|4k|ultrahd|webrip/i.test(magnetLink)) return "2160p";
+            if (/2160p|4k|ultrahd|webrip/i.test(magnetLink)) return "4k";
             // 1080p / Full HD definitions
             if (/1080p|fullhd|fhd|webrip|webdl/i.test(magnetLink)) return "1080p";
             // 720p / HD definitions
@@ -69,7 +69,6 @@ exports.Scout = function (page, title, imdbid) {
         scrapers.forEach(function (scraper) {
             if (scraper && scraper.scraperFunction) {
                 try {
-                    // Update page metadata title for the current scraper
                     page.metadata.title = 'Searching ' + scraper.name + ', please wait...';
 
                     var results = scraper.scraperFunction(page, title);
@@ -98,11 +97,7 @@ exports.Scout = function (page, title, imdbid) {
 
         checkCancellation();
 
-        // Update metadata title for analyzing video quality
-        page.metadata.title = "Analyzing video quality, please wait...";
-
         if (combinedResults.length === 0) {
-            // Notify user of failures but still display results if any exist
             if (errors.length > 0) {
                 errors.forEach(function (err) {
                     popup.notify("Error in addon " + err.scraper + ": " + err.error, 5);
@@ -157,40 +152,39 @@ exports.Scout = function (page, title, imdbid) {
                     break;
             }
 
-            // First, attempt to select the best result based on the preferred quality
-            var selectedResult = selectBestResult(preferredQualityRegex, nextLowerQualityRegex);
-            
-            // If no preferred quality is found, fall back to the next lower quality
-            if (!selectedResult && nextLowerQualityRegex) {
-                selectedResult = selectBestResult(nextLowerQualityRegex, null);
-            }
+            var selectedResult = selectBestResult(preferredQualityRegex, nextLowerQualityRegex) ||
+                selectBestResult(nextHigherQualityRegex) ||
+                combinedResults.sort(function (a, b) { return b.seeders - a.seeders; })[0];
 
-            // If no result is found in the lower quality, check higher quality if specified
-            if (!selectedResult && nextHigherQualityRegex) {
-                selectedResult = selectBestResult(nextHigherQualityRegex, null);
-            }
-
-            // If still no result, choose the best available source based on seeders
-            if (!selectedResult) {
-                selectedResult = combinedResults.sort(function (a, b) { return b.seeders - a.seeders; })[0];
-            }
-
-            // Proceed with the selected result
             if (selectedResult) {
-                var vparams = 'videoparams:' + JSON.stringify({
-                    title: title,
-                    canonicalUrl: 'torrent://' + selectedResult.magnetLink,
-                    no_fs_scan: true,
-                    sources: [{ url: 'torrent:video:' + selectedResult.magnetLink }],
-                    imdbid: imdbid
-                });
+                if (selectedResult.source === 'InternetArchive') {
+                    var vparams = 'videoparams:' + JSON.stringify({
+                        title: title,
+                        canonicalUrl: selectedResult.magnetLink,
+                        no_fs_scan: true,
+                        sources: [{ url: selectedResult.magnetLink }],
+                        imdbid: imdbid
+                    });
 
-                popup.notify(selectedResult.source + ' | Streaming at ' + selectedResult.quality + ' with ' + selectedResult.seeders + ' Seeders.', 10);
-                page.loading = false;
-                page.redirect(vparams);
+                    popup.notify(selectedResult.source + ' | Streaming at ' + selectedResult.quality + ', Direct.', 10);
+                    page.loading = false;
+                    page.redirect(vparams);
+                } else {
+                    var vparams = 'videoparams:' + JSON.stringify({
+                        title: title,
+                        canonicalUrl: 'torrent://' + selectedResult.magnetLink,
+                        no_fs_scan: true,
+                        sources: [{ url: 'torrent:video:' + selectedResult.magnetLink }],
+                        imdbid: imdbid
+                    });
+
+                    popup.notify(selectedResult.source + ' | Streaming at ' + selectedResult.quality + ' with ' + selectedResult.seeders + ' Seeders.', 10);
+                    page.loading = false;
+                    page.redirect(vparams);
+                }
             } else {
                 page.loading = false;
-                page.error("No streams available. Check the addon configurations.");
+                popup.notify("No suitable streams found.", 5);
             }
 
             cleanup();
