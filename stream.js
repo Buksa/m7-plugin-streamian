@@ -138,13 +138,13 @@ exports.Scout = function (page, title, imdbid) {
 
             switch (service.selectQuality) {
                 case "UltraHD":
-                    preferredQualityRegex = /2160p/i;
+                    preferredQualityRegex = /4k/i;
                     nextLowerQualityRegex = /1080p/i;
                     break;
                 case "FullHD":
                     preferredQualityRegex = /1080p/i;
                     nextLowerQualityRegex = /720p/i;
-                    nextHigherQualityRegex = /2160p/i;
+                    nextHigherQualityRegex = /4k/i;
                     break;
                 case "HD":
                     preferredQualityRegex = /720p/i;
@@ -157,23 +157,26 @@ exports.Scout = function (page, title, imdbid) {
                     break;
             }
 
-            var selectedResult = selectBestResult(preferredQualityRegex, nextLowerQualityRegex) ||
-                selectBestResult(nextHigherQualityRegex) ||
-                combinedResults.sort(function (a, b) { return b.seeders - a.seeders; })[0];
+            // First, attempt to select the best result based on the preferred quality
+            var selectedResult = selectBestResult(preferredQualityRegex, nextLowerQualityRegex);
+            
+            // If no preferred quality is found, fall back to the next lower quality
+            if (!selectedResult && nextLowerQualityRegex) {
+                selectedResult = selectBestResult(nextLowerQualityRegex, null);
+            }
 
-            if (selectedResult.source === 'InternetArchive') {
-                var vparams = 'videoparams:' + JSON.stringify({
-                    title: title,
-                    canonicalUrl: selectedResult.magnetLink,
-                    no_fs_scan: true,
-                    sources: [{ url: selectedResult.magnetLink }],
-                    imdbid: imdbid
-                });
+            // If no result is found in the lower quality, check higher quality if specified
+            if (!selectedResult && nextHigherQualityRegex) {
+                selectedResult = selectBestResult(nextHigherQualityRegex, null);
+            }
 
-                popup.notify(selectedResult.source + ' | Streaming at ' + selectedResult.quality + ', Direct.', 10);
-                page.loading = false;
-                page.redirect(vparams);
-            } else if (selectedResult) {
+            // If still no result, choose the best available source based on seeders
+            if (!selectedResult) {
+                selectedResult = combinedResults.sort(function (a, b) { return b.seeders - a.seeders; })[0];
+            }
+
+            // Proceed with the selected result
+            if (selectedResult) {
                 var vparams = 'videoparams:' + JSON.stringify({
                     title: title,
                     canonicalUrl: 'torrent://' + selectedResult.magnetLink,
@@ -187,7 +190,7 @@ exports.Scout = function (page, title, imdbid) {
                 page.redirect(vparams);
             } else {
                 page.loading = false;
-                return [];
+                page.error("No streams available. Check the addon configurations.");
             }
 
             cleanup();
