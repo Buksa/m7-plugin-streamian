@@ -35,15 +35,21 @@ exports.Scout = function (page, title, imdbid) {
         if (!url) return null;
 
         var fileName = url.split('/').pop().replace('.js', '');
-        var scriptText = showtime.httpReq(url).toString();
-        var scraperFunction = new Function('page', 'title', scriptText + '\nreturn search' + fileName + '(page, title);');
+        try {
+            var scriptText = showtime.httpReq(url).toString();
+            var scraperFunction = new Function('page', 'title', scriptText + '\nreturn search' + fileName + '(page, title);');
 
-        return { scraperFunction: scraperFunction, name: fileName };
+            return { scraperFunction: scraperFunction, name: fileName };
+        } catch (e) {
+            showtime.print("Failed to load scraper " + fileName + ": " + e.message);
+            return null; // Skip this scraper
+        }
     }
 
     try {
         var scrapers = getScraperUrls().map(loadScraper);
         var combinedResults = [];
+        var errors = [];
 
         function analyzeQuality(magnetLink, codec) {
             // Skip H265 codecs, as they're unsupported
@@ -62,27 +68,31 @@ exports.Scout = function (page, title, imdbid) {
 
         scrapers.forEach(function (scraper) {
             if (scraper && scraper.scraperFunction) {
-                // Update page metadata title for the current scraper
-                page.metadata.title = 'Searching ' + scraper.name + ', please wait...';
+                try {
+                    // Update page metadata title for the current scraper
+                    page.metadata.title = 'Searching ' + scraper.name + ', please wait...';
 
-                var results = scraper.scraperFunction(page, title);
-                checkCancellation();
+                    var results = scraper.scraperFunction(page, title);
+                    checkCancellation();
 
-                combinedResults = combinedResults.concat(
-                    results.map(function (result) {
-                        var parts = result.split(' - ');
-                        var magnetLink = parts[0];
-                        var codec = parts[3] || 'Unknown';
-                        var analyzedQuality = analyzeQuality(magnetLink, codec);
+                    combinedResults = combinedResults.concat(
+                        results.map(function (result) {
+                            var parts = result.split(' - ');
+                            var magnetLink = parts[0];
+                            var codec = parts[3] || 'Unknown';
+                            var analyzedQuality = analyzeQuality(magnetLink, codec);
 
-                        return {
-                            magnetLink: magnetLink,
-                            quality: analyzedQuality || parts[1] || "Unknown",
-                            seeders: parseInt(parts[2]) || 0,
-                            source: scraper.name
-                        };
-                    })
-                );
+                            return {
+                                magnetLink: magnetLink,
+                                quality: analyzedQuality || parts[1] || "Unknown",
+                                seeders: parseInt(parts[2]) || 0,
+                                source: scraper.name
+                            };
+                        })
+                    );
+                } catch (e) {
+                    showtime.print("Error in scraper " + scraper.name + ": " + e.message);
+                }
             }
         });
 
@@ -90,6 +100,18 @@ exports.Scout = function (page, title, imdbid) {
 
         // Update metadata title for analyzing video quality
         page.metadata.title = "Analyzing video quality, please wait...";
+
+        if (combinedResults.length === 0) {
+            // Notify user of failures but still display results if any exist
+            if (errors.length > 0) {
+                errors.forEach(function (err) {
+                    popup.notify("Error in addon " + err.scraper + ": " + err.error, 5);
+                });
+            }
+            page.loading = false;
+            page.error("No streams available. Check the addon configurations.");
+            return;
+        }
 
         function selectBestResult(preferredRegex, fallbackRegex) {
             var filtered = combinedResults.filter(function (item) {
@@ -175,5 +197,6 @@ exports.Scout = function (page, title, imdbid) {
 
     } catch (e) {
         cleanup();
+        popup.notify("Unexpected error occurred: " + e, 5);
     }
 };

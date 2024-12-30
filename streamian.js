@@ -58,18 +58,30 @@ settings.createMultiOpt('selectSeeders', 'Preferred Minimum Seeder Count', [
   ], function(v) {
     service.minPreferredSeeders = v;
 });
+/*settings.createMultiOpt('addonTimeout', 'Addon Timeout (Seconds)', [
+    ['100', '100'],
+    ['65', '65'],
+    ['40', '40'],
+    ['30', '30', true],
+    ['20', '20'],
+    ['10', '10'],
+    ['5', '5'],
+    ['1', '1'],
+  ], function(v) {
+    service.addonTimeout = v;
+});*/
 settings.createDivider("                Scraper Plug-in's:                                                                                                                                                                                                                                                                                                                                                                                                                              ");
 settings.createDivider('');
 settings.createString('addon1url', 'Slot 1', 'https://raw.githubusercontent.com/F0R3V3R50F7/m7-plugin-streamian-yifymovies/refs/heads/main/YifyMovies.js', function(v) {
     service.addon1url = v;
 });
-settings.createString('addon2url', 'Slot 2', 'https://raw.githubusercontent.com/F0R3V3R50F7/m7-plugin-streamian-internetarchive/refs/heads/main/InternetArchive.js', function(v) {
+settings.createString('addon2url', 'Slot 2', 'https://raw.githubusercontent.com/F0R3V3R50F7/m7-plugin-streamian-thepiratebay/refs/heads/main/ThePirateBay.js', function(v) {
     service.addon2url = v;
 });
 settings.createString('addon3url', 'Slot 3', 'https://raw.githubusercontent.com/F0R3V3R50F7/m7-plugin-streamian-eztv/refs/heads/main/EZTV.js', function(v) {
     service.addon3url = v;
 });
-settings.createString('addon4url', 'Slot 4', 'https://raw.githubusercontent.com/F0R3V3R50F7/m7-plugin-streamian-thepiratebay/refs/heads/main/ThePirateBay.js', function(v) {
+settings.createString('addon4url', 'Slot 4', 'https://raw.githubusercontent.com/F0R3V3R50F7/m7-plugin-streamian-internetarchive/refs/heads/main/InternetArchive.js', function(v) {
     service.addon4url = v;
 });
 settings.createString('addon5url', 'Slot 5', '', function(v) {
@@ -904,15 +916,13 @@ new page.Route(plugin.id + ":start", function(page) {
     });
     var ondemandhistoryList = ondemandhistory.list ? JSON.parse(ondemandhistory.list) : [];
     if (ondemandhistoryList.length >= 4) {
-        var itemCount = 0;  // Counter to track the number of items added
-        var selectedItems = [];  // Array to store selected items
+        var itemCount = 0; // Counter to track the number of items added
 
         // Append the "jump back" item
         page.appendItem(plugin.id + ":watchhistory", 'video', {
             icon: Plugin.path + "images/jumpback.png",
         });
 
-        // Select exactly 2 items from the top and 2 items from the bottom
         // Generate a seed based on the current timestamp for pseudo-random selection
         var seed = new Date().getTime() % 100000;
 
@@ -922,7 +932,7 @@ new page.Route(plugin.id + ":start", function(page) {
             return seed / 233280.0;
         }
 
-        // Helper function to pick 2 random items from a list
+        // Helper function to pick unique random items from a list
         function pickRandomItems(list, count, seed) {
             var result = [];
             var usedIndexes = {};
@@ -937,6 +947,29 @@ new page.Route(plugin.id + ":start", function(page) {
             return result;
         }
 
+        // Ensure there are enough items selected
+        function ensureFourItems(selectedItems, list, seed) {
+            var requiredItems = 4 - selectedItems.length;
+            if (requiredItems > 0) {
+                var remainingItems = [];
+                for (var i = 0; i < list.length; i++) {
+                    var isAlreadySelected = false;
+                    for (var j = 0; j < selectedItems.length; j++) {
+                        if (list[i] === selectedItems[j]) {
+                            isAlreadySelected = true;
+                            break;
+                        }
+                    }
+                    if (!isAlreadySelected) {
+                        remainingItems.push(list[i]);
+                    }
+                }
+                var additionalItems = pickRandomItems(remainingItems, requiredItems, seed);
+                selectedItems = selectedItems.concat(additionalItems);
+            }
+            return selectedItems;
+        }
+
         // Split the list into older and newer halves
         var middleIndex = ~~(ondemandhistoryList.length / 2); // Truncate without Math.floor
         var olderItems = ondemandhistoryList.slice(0, middleIndex);
@@ -946,25 +979,23 @@ new page.Route(plugin.id + ":start", function(page) {
         var topItems = pickRandomItems(olderItems, 2, seed);
         var bottomItems = pickRandomItems(newerItems, 2, seed + 1);
 
-        // Combine the selected items
-        var selectedItems = topItems.concat(bottomItems);
-
-
-        selectedItems = topItems.concat(bottomItems);  // Combine top and bottom items
+        // Combine the selected items and ensure exactly 4 items
+        var selectedItems = ensureFourItems(topItems.concat(bottomItems), ondemandhistoryList, seed + 2);
 
         // Process the selected items
-        selectedItems.forEach(function(itemmd) {
-            if (itemCount >= 4) {  // Ensure exactly 4 items are added
-                return;  // Exit if the limit is reached
+        for (var i = 0; i < selectedItems.length; i++) {
+            if (itemCount >= 4) { // Ensure exactly 4 items are added
+                break;
             }
 
+            var itemmd = selectedItems[i];
             if (itemmd.type === 'episode') {
                 var results = metadata.Scout(itemmd.title, 'episode');
-                results.forEach(function(item) {
+                for (var j = 0; j < results.length; j++) {
                     if (itemCount >= 4) {
-                        return;  // Exit if 4 items are added
+                        break;
                     }
-                    var itemParts = item.split(" -|- ");
+                    var itemParts = results[j].split(" -|- ");
                     var url = plugin.id + ":details:" + itemmd.title + ':episode';
                     var videoItem = page.appendItem(url, "video", {
                         title: itemmd.title,
@@ -974,15 +1005,15 @@ new page.Route(plugin.id + ":start", function(page) {
                         removeFromOnDemandHistory(itemmd.title);
                     });
 
-                    itemCount++;  // Increment the counter
-                });
+                    itemCount++; // Increment the counter
+                }
             } else {
                 var results = metadata.Scout(itemmd.title, 'movie');
-                results.forEach(function(item) {
+                for (var j = 0; j < results.length; j++) {
                     if (itemCount >= 4) {
-                        return;  // Exit if 4 items are added
+                        break;
                     }
-                    var itemParts = item.split(" -|- ");
+                    var itemParts = results[j].split(" -|- ");
                     var url = plugin.id + ":details:" + itemmd.title + ':movie';
                     var videoItem = page.appendItem(url, "video", {
                         title: itemmd.title,
@@ -992,11 +1023,12 @@ new page.Route(plugin.id + ":start", function(page) {
                         removeFromOnDemandHistory(itemmd.title);
                     });
 
-                    itemCount++;  // Increment the counter
-                });
+                    itemCount++; // Increment the counter
+                }
             }
-        });
+        }
     }
+
 
 
 
