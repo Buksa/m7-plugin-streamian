@@ -42,7 +42,7 @@ exports.Scout = function (page, title, imdbid) {
             return { scraperFunction: scraperFunction, name: fileName };
         } catch (e) {
             showtime.print("Failed to load scraper " + fileName + ": " + e.message);
-            return null; // Skip this scraper
+            return null;
         }
     }
 
@@ -52,18 +52,28 @@ exports.Scout = function (page, title, imdbid) {
         var errors = [];
 
         function analyzeQuality(magnetLink, codec) {
-            // Skip H265 codecs, as they're unsupported
             if (service.H265Filter && /x265|h265/i.test(codec)) return null;
-            // 4K / Ultra HD definitions
-            if (/2160p|4k|ultrahd|webrip/i.test(magnetLink)) return "4k";
-            // 1080p / Full HD definitions
-            if (/1080p|fullhd|fhd|webrip|webdl/i.test(magnetLink)) return "1080p";
-            // 720p / HD definitions
-            if (/720p|hd|hdtv|webrip|webdl/i.test(magnetLink)) return "720p";
-            // 480p / Standard definition
-            if (/480p|sd|dvd|webrip|webdl/i.test(magnetLink)) return "480p";
-            // 360p / Lower quality definitions
-            if (/360p|hq|ld|webrip|webdl/i.test(magnetLink)) return "360p";
+
+            // Explicit quality definitions
+            if (/2160p|4k|ultrahd/i.test(magnetLink)) return "4k";
+            if (/1080p|fullhd|fhd/i.test(magnetLink)) return "1080p";
+            if (/720p|hd/i.test(magnetLink)) return "720p";
+            if (/480p|sd|dvd/i.test(magnetLink)) return "480p";
+            if (/360p|hq|ld/i.test(magnetLink)) return "360p";
+
+            // Contextual handling for ambiguous terms like WebRip or WebDL
+            if (/webrip|webdl/i.test(magnetLink)) {
+                if (/2160p|4k|ultrahd/i.test(magnetLink)) return "4k";
+                if (/1080p|fullhd|fhd/i.test(magnetLink)) return "1080p";
+                if (/720p|hd/i.test(magnetLink)) return "720p";
+                if (/480p|sd/i.test(magnetLink)) return "480p";
+                if (/360p|hq|ld/i.test(magnetLink)) return "360p";
+
+                // Default fallback for WebRip/WebDL without explicit quality
+                return "Unknown";
+            }
+
+            return null; // Return null if no match is found
         }
 
         scrapers.forEach(function (scraper) {

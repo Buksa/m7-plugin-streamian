@@ -396,7 +396,7 @@ function removeFromOnDemandHistory(title) {
     // Check if an entry was actually removed
     if (list.length < initialLength) {
         popup.notify("'" + title + "' has been removed from Your Watch History.", 3);
-        page.redirect(plugin.id + ':history');
+        page.redirect(plugin.id + ':watchhistory');
     } else {
         popup.notify("Entry not found in watch history.", 3);
     }
@@ -434,35 +434,41 @@ function addOptionForRemovingChannelFromLibrary(page, item, title, pos) {
 }
 
 function isFavorite(title) {
-    var list = JSON.parse(library.list);
+    var list = JSON.parse(library.list || "[]"); // Handle empty library case
     return list.some(function(fav) {
-      return fav.identifier === title;
+        return fav.title === title; // Use `title` consistently
     });
 }
 
 function addToLibrary(title, type, icon) {
-    var list = JSON.parse(library.list);
+    var list = JSON.parse(library.list || "[]"); // Handle empty library case
     if (isFavorite(title)) {
-      popup.notify('\'' + title + '\' is already in Your Library.', 3);
+        popup.notify("'" + title + "' is already in Your Library.", 3);
     } else {
-      popup.notify('\'' + title + '\' has been added to Your Library.', 3);
-      var libraryItem = {
-        title: title,
-        type: type,
-        icon: icon
-      };
-      list.push(libraryItem);
-      library.list = JSON.stringify(list);
+        popup.notify("'" + title + "' has been added to Your Library.", 3);
+        var libraryItem = {
+            title: title, // Consistently use `title`
+            type: type,
+            icon: icon
+        };
+        list.push(libraryItem);
+        library.list = JSON.stringify(list);
     }
 }
 
 function removeFromLibrary(title) {
-    var list = JSON.parse(library.list);
+    var list = JSON.parse(library.list || "[]"); // Handle empty library case
     var initialLength = list.length;
     list = list.filter(function(fav) {
-        return fav.title !== title;
+        return fav.title !== title; // Consistently use `title`
     });
-    popup.notify("'" + title + "' has been removed from Your Library.", 3);
+
+    if (list.length < initialLength) {
+        popup.notify("'" + title + "' has been removed from Your Library.", 3);
+    } else {
+        popup.notify("'" + title + "' was not found in Your Library.", 3);
+    }
+
     library.list = JSON.stringify(list);
 }
 
@@ -987,52 +993,47 @@ new page.Route(plugin.id + ":start", function(page) {
             if (itemCount >= 4) { // Ensure exactly 4 items are added
                 break;
             }
+            (function(itemmd) {
+                if (itemmd.type === 'episode') {
+                    var results = metadata.Scout(itemmd.title, 'episode');
+                    for (var j = 0; j < results.length; j++) {
+                        if (itemCount >= 4) {
+                            break;
+                        }
+                        var itemParts = results[j].split(" -|- ");
+                        var url = plugin.id + ":details:" + itemmd.title + ':episode';
+                        var videoItem = page.appendItem(url, "video", {
+                            title: itemmd.title,
+                            icon: itemParts[1].indexOf('https') > -1 ? itemParts[1] : Plugin.path + "images/nostill.png",
+                        });
+                        videoItem.addOptAction('Remove \'' + itemmd.title + '\' from Your Watch History', function() {
+                            removeFromOnDemandHistory(itemmd.title);
+                        });
 
-            var itemmd = selectedItems[i];
-            if (itemmd.type === 'episode') {
-                var results = metadata.Scout(itemmd.title, 'episode');
-                for (var j = 0; j < results.length; j++) {
-                    if (itemCount >= 4) {
-                        break;
+                        itemCount++; // Increment the counter
                     }
-                    var itemParts = results[j].split(" -|- ");
-                    var url = plugin.id + ":details:" + itemmd.title + ':episode';
-                    var videoItem = page.appendItem(url, "video", {
-                        title: itemmd.title,
-                        icon: itemParts[1].indexOf('https') > -1 ? itemParts[1] : Plugin.path + "images/nostill.png",
-                    });
-                    videoItem.addOptAction('Remove \'' + itemmd.title + '\' from Your Watch History', function() {
-                        removeFromOnDemandHistory(itemmd.title);
-                    });
+                } else {
+                    var results = metadata.Scout(itemmd.title, 'movie');
+                    for (var j = 0; j < results.length; j++) {
+                        if (itemCount >= 4) {
+                            break;
+                        }
+                        var itemParts = results[j].split(" -|- ");
+                        var url = plugin.id + ":details:" + itemmd.title + ':movie';
+                        var videoItem = page.appendItem(url, "video", {
+                            title: itemmd.title,
+                            icon: itemParts[1].indexOf('https') > -1 ? itemParts[1] : Plugin.path + "images/nostill.png",
+                        });
+                        videoItem.addOptAction('Remove \'' + itemmd.title + '\' from Your Watch History', function() {
+                            removeFromOnDemandHistory(itemmd.title);
+                        });
 
-                    itemCount++; // Increment the counter
-                }
-            } else {
-                var results = metadata.Scout(itemmd.title, 'movie');
-                for (var j = 0; j < results.length; j++) {
-                    if (itemCount >= 4) {
-                        break;
+                        itemCount++; // Increment the counter
                     }
-                    var itemParts = results[j].split(" -|- ");
-                    var url = plugin.id + ":details:" + itemmd.title + ':movie';
-                    var videoItem = page.appendItem(url, "video", {
-                        title: itemmd.title,
-                        icon: itemParts[1].indexOf('https') > -1 ? itemParts[1] : Plugin.path + "images/nostill.png",
-                    });
-                    videoItem.addOptAction('Remove \'' + itemmd.title + '\' from Your Watch History', function() {
-                        removeFromOnDemandHistory(itemmd.title);
-                    });
-
-                    itemCount++; // Increment the counter
                 }
-            }
+            })(selectedItems[i]); // Pass the correct item to the IIFE
         }
     }
-
-
-
-
-
     page.appendItem(plugin.id + ":popularshows", "video", {
         icon: Plugin.path + "images/popular_shows.png"
     });
@@ -1717,36 +1718,41 @@ new page.Route(plugin.id + ":library", function(page) {
     page.appendItem(plugin.id + ":watchhistory", 'video', {
         icon: Plugin.path + "images/history_off.png",
     });
-    // Check if library.list is defined and parse it
-    var libraryList= library.list ? JSON.parse(library.list) : [];
 
-    page.appendItem('', 'separator', {title: ''});
-    page.appendItem('', 'separator', {title: '        On-Demand                                                                                                                                                                                                                                                               '});
-    page.appendItem('', 'separator', {title: ''});
+    page.appendItem('', 'separator', { title: '' });
+    page.appendItem('', 'separator', { title: '        On-Demand                                                                                                                                                                                                                                                               ' });
+    page.appendItem('', 'separator', { title: '' });
+
+    // Check if library.list is defined and parse it
+    var libraryList = library.list ? JSON.parse(library.list) : [];
 
     for (var i = libraryList.length - 1; i >= 0; i--) {
-        itemmd = libraryList[i];
+        var itemmd = libraryList[i]; // Use var for Movian compatibility
         if (itemmd.type === 'show') {
-            url = plugin.id + ":show:" + itemmd.title;
+            var url = plugin.id + ":show:" + itemmd.title;
             var videoItem = page.appendItem(url, "video", {
                 title: itemmd.title,
-                icon: itemmd.icon.indexOf('https') > -1 ? itemmd.icon : Plugin.path + "images/nostill.png",
+                icon: itemmd.icon.indexOf('https') > -1 ? itemmd.icon : Plugin.path + "images/nostill.png"
             });
-            videoItem.addOptAction('Remove \'' + itemmd.title + '\' from Your Library', function() {
-                removeFromLibrary(itemmd.title);
-            });
+            videoItem.addOptAction('Remove \'' + itemmd.title + '\' from Your Library', (function(item) {
+                return function() {
+                    removeFromLibrary(item.title);
+                    page.redirect(plugin.id + ":library");
+                };
+            })(itemmd)); // Use an IIFE for closure
         } else {
-            url = plugin.id + ":details:" + itemmd.title + ':movie';
-            videoItem = page.appendItem(url, "video", {
+            var url = plugin.id + ":details:" + itemmd.title + ':movie';
+            var videoItem = page.appendItem(url, "video", {
                 title: itemmd.title,
-                icon: itemmd.icon  || Plugin.path + "images/nostill.png"
+                icon: itemmd.icon || Plugin.path + "images/nostill.png"
             });
-            videoItem.addOptAction('Remove \'' + itemmd.title + '\' from Your Library', function() {
-                removeFromLibrary(itemmd.title);
-                page.redirect(plugin.id + ":library")
-            });
+            videoItem.addOptAction('Remove \'' + itemmd.title + '\' from Your Library', (function(item) {
+                return function() {
+                    removeFromLibrary(item.title);
+                    page.redirect(plugin.id + ":library");
+                };
+            })(itemmd)); // Use an IIFE for closure
         }
-
     }
 
     page.appendItem('', 'separator', {title: ''});
@@ -1772,71 +1778,72 @@ new page.Route(plugin.id + ":watchhistory", function(page) {
     setPageHeader(page, "Watch History");
     page.model.contents = 'grid';
     cancelCurrentOperation();
-    page.appendItem(plugin.id + ":start", 'video', {
-        icon: Plugin.path + "images/ondemand_off.png",
-    });
-    page.appendItem(plugin.id + ":channels", 'video', {
-        icon: Plugin.path + "images/channels_off.png",
-    });
-    page.appendItem(plugin.id + ":search", 'video', {
-        icon: Plugin.path + "images/search_off.png",
-    });
-    page.appendItem(plugin.id + ":library", 'video', {
-        icon: Plugin.path + "images/library_off.png",
-    });
-    page.appendItem(plugin.id + ":watchhistory", 'video', {
-        icon: Plugin.path + "images/history_on.png",
-    });
 
-    page.appendItem('', 'separator', {title: ''});
-    page.appendItem('', 'separator', {title: '        On-Demand                                                                                                                                                                                                                                                               '});
-    page.appendItem('', 'separator', {title: ''});
+    // Add navigation items
+    page.appendItem(plugin.id + ":start", 'video', { icon: Plugin.path + "images/ondemand_off.png" });
+    page.appendItem(plugin.id + ":channels", 'video', { icon: Plugin.path + "images/channels_off.png" });
+    page.appendItem(plugin.id + ":search", 'video', { icon: Plugin.path + "images/search_off.png" });
+    page.appendItem(plugin.id + ":library", 'video', { icon: Plugin.path + "images/library_off.png" });
+    page.appendItem(plugin.id + ":watchhistory", 'video', { icon: Plugin.path + "images/history_on.png" });
+
+    // Add separators
+    page.appendItem('', 'separator', { title: '' });
+    page.appendItem('', 'separator', { title: '        On-Demand                                                                                                                                                                                                                                                               ' });
+    page.appendItem('', 'separator', { title: '' });
 
     var ondemandhistoryList = ondemandhistory.list ? JSON.parse(ondemandhistory.list) : [];
 
-    for (var i = ondemandhistoryList.length - 1; i >= 0; i--) {
-        var itemmd = ondemandhistoryList[i];
-
+    // Process the on-demand history
+    ondemandhistoryList.reverse().forEach(function(itemmd) {
         if (itemmd.type === 'episode') {
             var results = metadata.Scout(itemmd.title, 'episode');
-            results.forEach(function (item) {
+            results.forEach(function(item) {
                 var itemParts = item.split(" -|- ");
                 var url = plugin.id + ":details:" + itemmd.title + ':episode';
                 var videoItem = page.appendItem(url, "video", {
                     title: itemmd.title,
                     icon: itemParts[1].indexOf('https') > -1 ? itemParts[1] : Plugin.path + "images/nostill.png",
                 });
-                videoItem.addOptAction('Remove \'' + itemmd.title + '\' from Your Watch History', function() {
-                    removeFromOnDemandHistory(itemmd.title);
-                });
+                // Use a scoped function to correctly bind itemmd
+                (function(title) {
+                    videoItem.addOptAction('Remove \'' + title + '\' from Your Watch History', function() {
+                        removeFromOnDemandHistory(title);
+                    });
+                })(itemmd.title);
             });
         } else {
             var results = metadata.Scout(itemmd.title, 'movie');
-            results.forEach(function (item) {
+            results.forEach(function(item) {
                 var itemParts = item.split(" -|- ");
                 var url = plugin.id + ":details:" + itemmd.title + ':movie';
                 var videoItem = page.appendItem(url, "video", {
                     title: itemmd.title,
                     icon: itemParts[1].indexOf('https') > -1 ? itemParts[1] : Plugin.path + "images/nostill.png",
                 });
-                videoItem.addOptAction('Remove \'' + itemmd.title + '\' from Your Watch History', function() {
-                    removeFromOnDemandHistory(itemmd.title);
-                });
+                // Use a scoped function to correctly bind itemmd
+                (function(title) {
+                    videoItem.addOptAction('Remove \'' + title + '\' from Your Watch History', function() {
+                        removeFromOnDemandHistory(title);
+                    });
+                })(itemmd.title);
             });
         }
-    }
-    page.appendItem('', 'separator', {title: ''});
-    page.appendItem('', 'separator', {title: '        Channels                                                                                                                                                                                                                                                               '});
-    page.appendItem('', 'separator', {title: ''});
+    });
 
+    // Add separators
+    page.appendItem('', 'separator', { title: '' });
+    page.appendItem('', 'separator', { title: '        Channels                                                                                                                                                                                                                                                               ' });
+    page.appendItem('', 'separator', { title: '' });
+
+    // Process the channel history
     var list = eval(channelhistory.list);
-    for (var i in list) {
-      var itemmd = JSON.parse(list[i]);
-      var item = page.appendItem(plugin.id + ":playchannel:" + itemmd.link + ':' + itemmd.title + ':' + itemmd.icon, "video", {
-        //title: decodeURIComponent(itemmd.title),
-        icon: "https:" + itemmd.icon || Plugin.path + "images/nostill.png",
-        description: 'Link: ' + itemmd.link,
-      });
-    }
+    list.forEach(function(item) {
+        var itemmd = JSON.parse(item);
+        page.appendItem(plugin.id + ":playchannel:" + itemmd.link + ':' + itemmd.title + ':' + itemmd.icon, "video", {
+            icon: "https:" + itemmd.icon || Plugin.path + "images/nostill.png",
+            description: 'Link: ' + itemmd.link,
+        });
+    });
+
     page.loading = false;
 });
